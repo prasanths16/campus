@@ -1,0 +1,726 @@
+*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;min-height:100vh;font-family:Plus Jakarta Sans,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:#fff;overflow-x:hidden}.welcome-container{position:relative;min-height:100vh;width:100%;background-image:url(/campus-bg.jpg);background-size:cover;background-position:center;background-repeat:no-repeat;display:flex;align-items:center;justify-content:center;padding:2.5rem 1.5rem}.overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#0a192f85,#0f172aa6);z-index:1}.welcome-content{position:relative;z-index:2;width:100%;max-width:900px;display:flex;flex-direction:column;align-items:center;text-align:center}.main-heading{font-size:clamp(2rem,5vw,3.4rem);font-weight:800;line-height:1.25;letter-spacing:.04em;color:#fff;text-transform:uppercase;text-shadow:0 4px 16px rgba(0,0,0,.6);margin-bottom:.85rem}.subtitle{font-size:clamp(1rem,2.5vw,1.35rem);font-weight:500;color:#ffffffeb;letter-spacing:.02em;text-shadow:0 2px 10px rgba(0,0,0,.5);margin-bottom:3rem}.cards-wrapper{display:flex;flex-direction:row;justify-content:center;align-items:stretch;gap:2.5rem;width:100%;max-width:700px}.glass-card{flex:1;min-width:250px;max-width:320px;background:#ffffff1f;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.28);border-radius:20px;box-shadow:0 8px 32px #00000059;padding:3rem 2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1)}.glass-card:hover{transform:translateY(-8px);background:#ffffff2e;border-color:#ffffff8c;box-shadow:0 16px 40px #00000073,0 0 25px #3b82f659}.card-heading{font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:.05em;margin-bottom:2rem;text-shadow:0 2px 8px rgba(0,0,0,.4)}.card-button{width:100%;padding:.9rem 1.5rem;font-size:.95rem;font-weight:700;letter-spacing:.05em;color:#fff;background:linear-gradient(135deg,#1d4ed8,#2563eb);border:1px solid rgba(255,255,255,.3);border-radius:12px;cursor:pointer;box-shadow:0 4px 15px #1d4ed859;transition:all .3s ease}.card-button:hover{background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 6px 20px #2563eb80;transform:scale(1.02)}.glass-card:hover .card-button{background:linear-gradient(135deg,#2563eb,#3b82f6)}.login-card{position:relative;z-index:2;width:100%;max-width:440px;background:#ffffff1f;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.28);border-radius:20px;box-shadow:0 10px 35px #0006;padding:2.75rem 2.5rem;display:flex;flex-direction:column}.register-card{max-width:480px;padding:2.5rem 2.25rem}.login-title{font-size:1.75rem;font-weight:700;color:#fff;letter-spacing:.04em;text-align:center;margin-bottom:1.75rem;text-shadow:0 2px 10px rgba(0,0,0,.4)}.login-form{display:flex;flex-direction:column;width:100%}.form-group{display:flex;flex-direction:column;gap:.45rem;margin-bottom:1.25rem;text-align:left}.register-card .form-group{margin-bottom:1.1rem}.form-label{font-size:.92rem;font-weight:600;color:#fffffff2;letter-spacing:.02em}.form-input{width:100%;padding:.8rem 1rem;font-size:.95rem;color:#fff;background:#ffffff1f;border:1px solid rgba(255,255,255,.28);border-radius:10px;outline:none;font-family:inherit;transition:all .25s ease}.form-input::placeholder{color:#ffffff8c}.form-input:focus{background:#ffffff2e;border-color:#3b82f6;box-shadow:0 0 0 3px #3b82f659}.login-button{width:100%;padding:.92rem;font-size:1rem;font-weight:700;letter-spacing:.05em;color:#fff;background:linear-gradient(135deg,#1d4ed8,#2563eb);border:1px solid rgba(255,255,255,.3);border-radius:12px;cursor:pointer;box-shadow:0 4px 15px #1d4ed859;transition:all .3s ease;margin-top:.5rem}.login-button:hover{background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 6px 20px #2563eb80;transform:translateY(-2px)}.register-text,.back-home-text{text-align:center;margin-top:1.5rem;font-size:.92rem;color:#ffffffd9;letter-spacing:.01em}.register-link,.back-home-link{color:#60a5fa;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;transition:color .2s ease}.register-link:hover,.back-home-link:hover{color:#93c5fd}.form-error-msg{background:#ef444433;border:1px solid rgba(239,68,68,.5);color:#fca5a5;padding:.75rem 1rem;border-radius:8px;font-size:.88rem;font-weight:500;margin-bottom:1.25rem;text-align:center}.form-success-msg{background:#22c55e33;border:1px solid rgba(34,197,94,.5);color:#86efac;padding:.75rem 1rem;border-radius:8px;font-size:.88rem;font-weight:500;margin-bottom:1.25rem;text-align:center}.dashboard-container{display:flex;min-height:100vh;width:100%;background-color:#f8fafc;color:#0f172a}.dashboard-sidebar{width:250px;background-color:#0f172a;color:#fff;display:flex;flex-direction:column;padding:2.25rem 1.25rem;flex-shrink:0;box-shadow:2px 0 16px #0000000f}.sidebar-brand h2{font-size:1.2rem;font-weight:800;letter-spacing:.06em;line-height:1.25;color:#fff;margin-bottom:2.5rem;padding-left:.75rem;border-left:3px solid #3b82f6}.sidebar-menu{display:flex;flex-direction:column;gap:.5rem;flex:1}.sidebar-item{display:flex;align-items:center;width:100%;padding:.85rem 1rem;border-radius:10px;border:none;background:transparent;color:#94a3b8;font-size:.95rem;font-weight:600;text-align:left;cursor:pointer;transition:all .2s ease;font-family:inherit}.sidebar-item:hover{background:#ffffff14;color:#fff}.sidebar-item.active{background:#2563eb;color:#fff;box-shadow:0 4px 14px #2563eb59}.sidebar-footer{padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.1)}.sidebar-logout{width:100%;padding:.8rem 1rem;border-radius:10px;border:1px solid rgba(239,68,68,.3);background:#ef44441a;color:#f87171;font-weight:600;font-size:.95rem;cursor:pointer;text-align:left;transition:all .2s ease;font-family:inherit}.sidebar-logout:hover{background:#dc2626;color:#fff;border-color:#dc2626}.dashboard-main{flex:1;padding:2.25rem 2.5rem;overflow-y:auto;background-color:#f8fafc;display:flex;flex-direction:column;gap:2rem}.dashboard-hero{position:relative;width:100%;min-height:220px;border-radius:20px;background-image:url(/campus-dashboard.jpg);background-size:cover;background-position:center;overflow:hidden;display:flex;align-items:center;padding:2.5rem 3rem;box-shadow:0 8px 30px #0f172a14}.hero-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0f172ad1,#1e3a8ab8);z-index:1}.hero-content{position:relative;z-index:2;color:#fff;max-width:650px}.hero-tag{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.08em;color:#bfdbfe;background:#3b82f640;border:1px solid rgba(191,219,254,.35);padding:.35rem .85rem;border-radius:20px;margin-bottom:.85rem}.hero-heading{font-size:2.3rem;font-weight:800;color:#fff;margin-bottom:.5rem;letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.3)}.hero-subtext{font-size:1.05rem;color:#ffffffeb;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,.3)}.dashboard-cards-section{width:100%}.dash-row-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;width:100%}.dash-action-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem 1.4rem;box-shadow:0 4px 18px #0000000a;display:flex;flex-direction:column;justify-content:space-between;transition:all .3s cubic-bezier(.4,0,.2,1)}.dash-action-card:hover{transform:translateY(-6px);box-shadow:0 14px 30px #0f172a14}.card-accent-blue:hover{border-color:#93c5fd}.card-accent-purple:hover{border-color:#c4b5fd}.card-accent-green:hover{border-color:#86efac}.card-accent-amber:hover{border-color:#fcd34d}.card-icon-box{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;transition:transform .25s ease}.dash-action-card:hover .card-icon-box{transform:scale(1.08)}.icon-blue{background:#eff6ff;color:#2563eb}.icon-purple{background:#f5f3ff;color:#7c3aed}.icon-green{background:#ecfdf5;color:#059669}.icon-amber{background:#fffbeb;color:#d97706}.card-item-title{font-size:1.15rem;font-weight:700;color:#1e293b;margin-bottom:.5rem}.card-item-desc{font-size:.9rem;color:#64748b;line-height:1.45;margin-bottom:1.5rem;flex:1}.card-action-btn{width:100%;padding:.75rem 1rem;font-size:.9rem;font-weight:600;border-radius:10px;cursor:pointer;transition:all .25s ease;border:none;text-align:center;font-family:inherit}.btn-blue{background:#2563eb;color:#fff;box-shadow:0 3px 10px #2563eb40}.btn-blue:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 5px 14px #2563eb59}.btn-purple{background:#7c3aed;color:#fff;box-shadow:0 3px 10px #7c3aed40}.btn-purple:hover{background:#6d28d9;transform:translateY(-1px);box-shadow:0 5px 14px #7c3aed59}.btn-green{background:#059669;color:#fff;box-shadow:0 3px 10px #05966940}.btn-green:hover{background:#047857;transform:translateY(-1px);box-shadow:0 5px 14px #05966959}.btn-amber{background:#d97706;color:#fff;box-shadow:0 3px 10px #d9770640}.btn-amber:hover{background:#b45309;transform:translateY(-1px);box-shadow:0 5px 14px #d9770659}.room-booking-main{gap:1.75rem}.room-booking-header{margin-bottom:.5rem}.room-booking-title{font-size:2.1rem;font-weight:800;color:#0f172a;letter-spacing:-.01em;margin-bottom:.4rem}.room-booking-subtitle{font-size:1.05rem;color:#64748b;font-weight:500}.booking-success-banner{display:flex;align-items:center;justify-content:space-between;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:.9rem 1.25rem;border-radius:12px;font-weight:600;font-size:.95rem;box-shadow:0 3px 12px #05966914;animation:fadeIn .25s ease}.banner-close-btn{background:transparent;border:none;font-size:1.4rem;color:#065f46;cursor:pointer;line-height:1;padding:0 .25rem}.booking-slots-section{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:1.75rem 2rem;box-shadow:0 4px 18px #00000008}.slots-header{margin-bottom:1.25rem}.slots-section-title{font-size:1.15rem;font-weight:800;letter-spacing:.05em;color:#1e3a8a;text-transform:uppercase;margin-bottom:.35rem}.slots-instruction{font-size:.95rem;color:#64748b}.time-slots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}.time-slot-card{background:#fff;border:1.5px solid #cbd5e1;border-radius:12px;padding:1.1rem .85rem;text-align:center;cursor:pointer;transition:all .25s ease;box-shadow:0 2px 8px #00000005;outline:none;font-family:inherit}.time-slot-card:hover{border-color:#3b82f6;transform:translateY(-2px);box-shadow:0 6px 16px #3b82f61a}.time-slot-card.active-slot{background:linear-gradient(135deg,#1d4ed8,#2563eb);border-color:#1d4ed8;color:#fff;box-shadow:0 6px 20px #2563eb4d;transform:translateY(-2px)}.slot-time-text{font-size:.95rem;font-weight:600;color:#1e293b;display:block}.active-slot .slot-time-text{color:#fff;font-weight:700}.rooms-display-section{width:100%}.select-slot-prompt{background:#fff;border:1.5px dashed #cbd5e1;border-radius:16px;padding:3rem 2rem;text-align:center;color:#64748b;font-size:1.05rem;font-weight:500}.rooms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;width:100%}.room-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px #0000000a;display:flex;flex-direction:column;transition:all .3s cubic-bezier(.4,0,.2,1)}.room-card:hover{transform:translateY(-5px);box-shadow:0 12px 28px #0f172a14;border-color:#cbd5e1}.room-image-wrapper{position:relative;width:100%;height:160px;background-color:#e2e8f0;overflow:hidden}.room-card-image{width:100%;height:100%;object-fit:cover;display:block}.room-image-fallback{width:100%;height:100%;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;text-align:center;padding:1rem}.room-status-badge{position:absolute;top:10px;right:10px;font-size:.75rem;font-weight:700;padding:.35rem .75rem;border-radius:20px;text-transform:uppercase;letter-spacing:.03em;box-shadow:0 2px 8px #00000026}.status-available{background:#dcfce7;color:#15803d;border:1px solid #86efac}.status-full{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}.status-booking-closed{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1}.status-booked{background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc}.room-card-body{padding:1.35rem 1.25rem 1.5rem;display:flex;flex-direction:column;flex:1}.room-card-name{font-size:1.25rem;font-weight:700;color:#0f172a;margin-bottom:.5rem}.room-card-detail{font-size:.92rem;color:#64748b;font-weight:500;margin-bottom:.35rem}.room-book-action-btn{width:100%;margin-top:1.35rem;padding:.75rem 1rem;font-size:.95rem;font-weight:700;border-radius:10px;border:none;font-family:inherit;transition:all .25s ease}.btn-can-book{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;cursor:pointer;box-shadow:0 3px 10px #2563eb40}.btn-can-book:hover{background:linear-gradient(135deg,#2563eb,#3b82f6);transform:translateY(-1px);box-shadow:0 6px 16px #2563eb59}.btn-cannot-book{background:#e2e8f0;color:#94a3b8;cursor:not-allowed}.btn-booked{background:#0284c7;color:#fff;cursor:not-allowed;opacity:.95;font-weight:700}.modal-backdrop{position:fixed;top:0;right:0;bottom:0;left:0;background:#0f172a99;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeIn .2s ease}.booking-modal-card{background:#fff;border-radius:20px;padding:2.25rem 2rem;width:100%;max-width:440px;box-shadow:0 20px 45px #0f172a38;border:1px solid #e2e8f0;animation:scaleIn .22s cubic-bezier(.16,1,.3,1)}.modal-title{font-size:1.45rem;font-weight:800;color:#0f172a;margin-bottom:1.5rem;text-align:center;letter-spacing:-.01em}.modal-info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem 1.4rem;margin-bottom:1.75rem;display:flex;flex-direction:column;gap:.9rem}.modal-row{display:flex;justify-content:space-between;align-items:center;font-size:.95rem}.modal-label{font-weight:600;color:#64748b}.modal-value{font-weight:700;color:#0f172a}.modal-actions-row{display:flex;gap:.85rem}.modal-btn-confirm{flex:1;padding:.85rem 1rem;font-size:.95rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#1d4ed8,#2563eb);border:none;border-radius:10px;cursor:pointer;transition:all .2s ease;font-family:inherit;box-shadow:0 3px 10px #2563eb40}.modal-btn-confirm:hover{background:linear-gradient(135deg,#2563eb,#3b82f6);transform:translateY(-1px);box-shadow:0 6px 14px #2563eb59}.modal-btn-cancel{flex:1;padding:.85rem 1rem;font-size:.95rem;font-weight:600;color:#475569;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;cursor:pointer;transition:all .2s ease;font-family:inherit}.modal-btn-cancel:hover{background:#e2e8f0;color:#1e293b}@keyframes fadeIn{0%{opacity:0}to{opacity:1}}@keyframes scaleIn{0%{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}.equipment-booking-main{gap:1.75rem}.equipment-time-banner{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:16px;padding:1.5rem 1.75rem;box-shadow:0 4px 18px #00000008;display:flex;flex-direction:column;align-items:flex-start;gap:.45rem}.time-banner-badge{font-size:.82rem;font-weight:800;letter-spacing:.08em;color:#1e40af;text-transform:uppercase;background:#eff6ff;border:1px solid #bfdbfe;padding:.35rem .85rem;border-radius:20px}.time-banner-clock{display:flex;align-items:center;gap:.65rem;color:#1e3a8a;margin-top:.2rem}.time-banner-clock svg{color:#2563eb}.time-banner-hours{font-size:1.45rem;font-weight:800;letter-spacing:-.01em;color:#0f172a}.time-banner-note{font-size:.92rem;color:#64748b;font-weight:500}.equipment-grid-section{width:100%}.equipment-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;width:100%}.equip-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px #0000000a;display:flex;flex-direction:column;transition:all .3s cubic-bezier(.4,0,.2,1)}.equip-card:hover{transform:translateY(-5px);box-shadow:0 12px 28px #0f172a14;border-color:#cbd5e1}.equip-icon-wrapper{width:100%;height:120px;display:flex;align-items:center;justify-content:center;position:relative;transition:transform .25s ease}.equip-card:hover .equip-icon-wrapper svg{transform:scale(1.1)}.equip-icon-wrapper svg{transition:transform .25s ease}.equip-amber{background:linear-gradient(135deg,#fffbeb,#fef3c7);color:#d97706}.equip-red{background:linear-gradient(135deg,#fef2f2,#fee2e2);color:#dc2626}.equip-blue{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#2563eb}.equip-orange{background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#ea580c}.equip-indigo{background:linear-gradient(135deg,#eef2ff,#e0e7ff);color:#4f46e5}.equip-purple{background:linear-gradient(135deg,#f5f3ff,#ede9fe);color:#7c3aed}.equip-emerald{background:linear-gradient(135deg,#ecfdf5,#d1fae5);color:#059669}.equip-card-body{padding:1.35rem 1.25rem 1.5rem;display:flex;flex-direction:column;flex:1}.equip-header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.9rem}.equip-name{font-size:1.18rem;font-weight:700;color:#0f172a;line-height:1.3}.equip-quantity-box{background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;padding:.75rem .9rem;display:flex;flex-direction:column;gap:.4rem;margin-bottom:.5rem}.equip-qty-text{font-size:.9rem;display:flex;justify-content:space-between;align-items:center}.qty-label{color:#64748b;font-weight:500}.qty-val{color:#0f172a;font-weight:700}.qty-zero{color:#ef4444;font-weight:800}.status-unavailable{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}.my-bookings-main{gap:1.75rem}.my-bookings-section{width:100%}.my-bookings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;width:100%}.my-booking-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:1.5rem;box-shadow:0 4px 18px #0000000a;display:flex;flex-direction:column;justify-content:space-between;transition:all .3s cubic-bezier(.4,0,.2,1)}.my-booking-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px #0f172a14;border-color:#cbd5e1}.my-booking-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem}.booking-type-badge{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.3rem .75rem;border-radius:20px}.type-room{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}.type-equipment{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}.my-booking-card-body{display:flex;flex-direction:column;flex:1}.my-booking-name{font-size:1.25rem;font-weight:700;color:#0f172a;margin-bottom:1rem}.my-booking-details-box{background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.25rem}.my-booking-row{display:flex;justify-content:space-between;align-items:center;font-size:.92rem}.bk-label{color:#64748b;font-weight:500}.bk-value{color:#0f172a;font-weight:700}.my-booking-card-footer{margin-top:auto;padding-top:.25rem}.btn-cancel-booking{width:100%;padding:.75rem 1rem;font-size:.92rem;font-weight:700;color:#dc2626;background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;cursor:pointer;transition:all .2s ease;font-family:inherit;text-align:center}.btn-cancel-booking:hover{background:#dc2626;color:#fff;border-color:#dc2626;transform:translateY(-1px);box-shadow:0 4px 12px #dc262640}.empty-bookings-box{background:#fff;border:1.5px dashed #cbd5e1;border-radius:18px;padding:3.5rem 2rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.empty-bookings-icon{width:72px;height:72px;border-radius:50%;background:#f1f5f9;color:#94a3b8;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem}.empty-bookings-title{font-size:1.35rem;font-weight:700;color:#0f172a;margin-bottom:.4rem}.empty-bookings-desc{font-size:.98rem;color:#64748b;margin-bottom:1.75rem;max-width:400px}.empty-bookings-actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}.empty-action-btn{padding:.8rem 1.4rem;font-size:.92rem;font-weight:700;border-radius:10px;cursor:pointer;transition:all .25s ease;font-family:inherit}.empty-action-btn.btn-primary{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;box-shadow:0 3px 10px #2563eb40}.empty-action-btn.btn-primary:hover{background:linear-gradient(135deg,#2563eb,#3b82f6);transform:translateY(-1px);box-shadow:0 6px 16px #2563eb59}.empty-action-btn.btn-secondary{background:#fff;color:#2563eb;border:1.5px solid #bfdbfe}.empty-action-btn.btn-secondary:hover{background:#eff6ff;border-color:#3b82f6}.cancel-modal-prompt{font-size:.98rem;color:#475569;text-align:center;margin-top:-.75rem;margin-bottom:1.25rem}.modal-btn-danger{flex:1;padding:.85rem 1rem;font-size:.95rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;border-radius:10px;cursor:pointer;transition:all .2s ease;font-family:inherit;box-shadow:0 3px 10px #dc262640}.modal-btn-danger:hover{background:linear-gradient(135deg,#ef4444,#dc2626);transform:translateY(-1px);box-shadow:0 6px 14px #dc262659}.admin-dashboard-main{gap:2rem}.admin-summary-section{width:100%}.admin-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;width:100%}.admin-summary-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:1.5rem 1.75rem;box-shadow:0 4px 18px #0000000a;display:flex;align-items:center;gap:1.25rem;transition:all .3s cubic-bezier(.4,0,.2,1)}.admin-summary-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px #0f172a14;border-color:#cbd5e1}.summary-icon-box{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .25s ease}.admin-summary-card:hover .summary-icon-box{transform:scale(1.06)}.icon-emerald{background:#ecfdf5;color:#059669}.icon-indigo{background:#eef2ff;color:#4f46e5}.summary-info{display:flex;flex-direction:column;gap:.2rem}.summary-label{font-size:.78rem;font-weight:700;letter-spacing:.06em;color:#64748b;text-transform:uppercase}.summary-value{font-size:2rem;font-weight:800;color:#0f172a;letter-spacing:-.02em;line-height:1.1}.admin-section{width:100%;display:flex;flex-direction:column;gap:1rem}.admin-section-title{font-size:1.15rem;font-weight:800;letter-spacing:.04em;color:#1e3a8a;text-transform:uppercase}.admin-actions-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;width:100%}.admin-action-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem 1.6rem;box-shadow:0 4px 18px #0000000a;display:flex;flex-direction:column;justify-content:space-between;transition:all .3s cubic-bezier(.4,0,.2,1)}.admin-action-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px #0f172a14}.action-card-header{display:flex;align-items:center;gap:1rem;margin-bottom:.5rem}.action-card-header .card-icon-box{margin-bottom:0}.recent-activity-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:.5rem 1.75rem;box-shadow:0 4px 18px #0000000a}.activity-list{display:flex;flex-direction:column}.activity-item{display:flex;align-items:center;gap:1rem;padding:1.1rem 0;border-bottom:1px solid #f1f5f9}.activity-item:last-child{border-bottom:none}.activity-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.dot-booked{background:#22c55e;box-shadow:0 0 0 3px #22c55e33}.dot-cancelled{background:#ef4444;box-shadow:0 0 0 3px #ef444433}.activity-content{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:.95rem}.activity-text{color:#1e293b;font-weight:500}.activity-text strong{font-weight:700;color:#0f172a}.activity-time{font-size:.85rem;color:#64748b;font-weight:600;background:#f1f5f9;padding:.25rem .65rem;border-radius:20px}.admin-table-card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px #00000008;width:100%}.admin-table-wrapper{width:100%;overflow-x:auto}.admin-rooms-table{width:100%;border-collapse:collapse;text-align:left;font-size:.95rem}.admin-rooms-table th{background:#f8fafc;color:#475569;font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;padding:1.15rem 1.25rem;border-bottom:1.5px solid #e2e8f0}.admin-rooms-table td{padding:1.15rem 1.25rem;color:#1e293b;border-bottom:1px solid #f1f5f9;vertical-align:middle}.admin-rooms-table tbody tr{transition:background-color .2s ease}.admin-rooms-table tbody tr:hover{background-color:#f8fafc}.admin-rooms-table tbody tr:last-child td{border-bottom:none}.cell-sno{color:#94a3b8;font-weight:600;width:70px}.cell-room-name{color:#0f172a;font-weight:700}.cell-block{color:#475569;font-weight:500}.cell-capacity{color:#0f172a;font-weight:700}.room-table-badge{display:inline-block;padding:.35rem .8rem;border-radius:20px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}.badge-available{background:#dcfce7;color:#15803d;border:1px solid #86efac}.badge-unavailable{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}.btn-edit-room{background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;padding:.45rem 1.1rem;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer;transition:all .2s ease;font-family:inherit}.btn-edit-room:hover{background:#2563eb;color:#fff;border-color:#2563eb;box-shadow:0 3px 10px #2563eb40;transform:translateY(-1px)}.admin-edit-modal{max-width:440px}.admin-edit-form{display:flex;flex-direction:column;gap:1.15rem}.admin-edit-form .form-group{margin-bottom:0}.admin-edit-form .form-label{color:#334155;font-weight:600;font-size:.9rem}.admin-edit-modal .form-input{background:#fff;color:#0f172a;border:1px solid #cbd5e1}.admin-edit-modal .form-input:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 3px #2563eb26}.admin-edit-modal .form-input-readonly{background:#f8fafc!important;color:#64748b!important;border-color:#e2e8f0!important;cursor:not-allowed}.admin-edit-modal .form-select{cursor:pointer}.admin-edit-modal .form-select option{background:#fff;color:#0f172a}
+
+/* ====================================================
+   ANALYTICS PAGE STYLES
+   ==================================================== */
+
+/* Header row: title left, controls right */
+.ana-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Controls area */
+.ana-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* Mode tab switcher */
+.ana-mode-tabs {
+  display: flex;
+  background: #e2e8f0;
+  border-radius: 10px;
+  padding: 3px;
+}
+.ana-tab {
+  padding: 0.55rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.ana-tab:hover {
+  color: #1e293b;
+}
+.ana-tab-active {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 2px 8px #2563eb40;
+}
+
+/* Date/Week input & wrapper */
+.ana-selector-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.ana-date-input {
+  padding: 0.55rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  background-color: #fff;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.ana-date-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Summary cards grid */
+.ana-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+}
+
+/* Stat card */
+.ana-stat-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.35rem 1.25rem;
+  box-shadow: 0 2px 12px #0000000a;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.25s ease;
+}
+.ana-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px #0f172a12;
+  border-color: #cbd5e1;
+}
+
+/* Stat icon */
+.ana-stat-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ana-icon-blue { background: #eff6ff; color: #2563eb; }
+.ana-icon-emerald { background: #ecfdf5; color: #059669; }
+.ana-icon-amber { background: #fffbeb; color: #d97706; }
+.ana-icon-indigo { background: #eef2ff; color: #4f46e5; }
+
+/* Stat info */
+.ana-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.ana-stat-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.ana-stat-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* Card container */
+.ana-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 2px 12px #0000000a;
+}
+
+/* Card header & title */
+.ana-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.ana-card-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ana-card-header .ana-card-title {
+  margin-bottom: 0;
+}
+.ana-trend-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+}
+.ana-card-title svg {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+/* Two column layout */
+.ana-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+/* Bar chart styles */
+.ana-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.ana-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.ana-bar-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+.ana-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.ana-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ana-fill-blue {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+.ana-fill-emerald {
+  background: linear-gradient(90deg, #34d399, #059669);
+}
+.ana-bar-count {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* Daily booking trend */
+.ana-trend-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+.ana-trend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.ana-trend-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 190px;
+  flex-shrink: 0;
+}
+.ana-trend-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+.ana-trend-percent {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+}
+
+/* Weekly breakdown */
+.ana-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.ana-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.ana-breakdown-day {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+.ana-breakdown-bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ana-breakdown-nums {
+  display: flex;
+  gap: 0.5rem;
+  min-width: 100px;
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+.ana-breakdown-room {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2563eb;
+  min-width: 24px;
+  text-align: right;
+}
+.ana-breakdown-equip {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #059669;
+  min-width: 24px;
+  text-align: right;
+}
+.ana-breakdown-total {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #0f172a;
+  min-width: 28px;
+  text-align: right;
+  background: #f1f5f9;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+}
+
+/* Legend */
+.ana-legend {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+.ana-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+}
+.ana-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.ana-dot-blue {
+  background: #2563eb;
+}
+.ana-dot-emerald {
+  background: #059669;
+}
+
+/* ====================================================
+   AI RECOMMENDATIONS SECTION
+   ==================================================== */
+.ana-ai-section {
+  margin-top: 0.5rem;
+}
+.ana-ai-header {
+  margin-bottom: 1.25rem;
+}
+.ana-ai-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.ana-ai-title svg {
+  color: #4f46e5;
+}
+.ana-ai-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* AI grid: 4 cards */
+.ana-ai-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+/* AI card */
+.ana-ai-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem 1.35rem;
+  box-shadow: 0 2px 12px #0000000a;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.25s ease;
+}
+.ana-ai-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px #0f172a12;
+  border-color: #cbd5e1;
+}
+
+/* AI card icon */
+.ana-ai-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* AI card top row */
+.ana-ai-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* AI card badge */
+.ana-ai-card-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #4f46e5;
+  text-transform: uppercase;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+}
+
+/* AI card meta label */
+.ana-ai-card-meta {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-top: -0.25rem;
+}
+
+/* AI card highlight */
+.ana-ai-card-highlight {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+/* AI card description */
+.ana-ai-card-desc {
+  font-size: 0.86rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* AI action items list */
+.ana-ai-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* ====================================================
+   STUDENT PROFILE & DATE DISPLAY STYLES
+   ==================================================== */
+.slots-actual-date,
+.equipment-actual-date {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 0.35rem;
+  margin-bottom: 0.55rem;
+  letter-spacing: -0.01em;
+}
+
+.student-profile-main {
+  gap: 1.75rem;
+}
+
+.profile-card-section {
+  width: 100%;
+  max-width: 800px;
+}
+
+.profile-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 2.25rem 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.profile-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  flex-shrink: 0;
+}
+
+.profile-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-name {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.profile-year-badge {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem 1.75rem;
+}
+
+.profile-detail-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-detail-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-detail-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+/* ====================================================
+   RESPONSIVE
+   ==================================================== */
+@media (max-width: 1200px) {
+  .dash-row-grid, .rooms-grid, .equipment-grid, .my-bookings-grid, .admin-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+  .time-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ana-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ana-two-col {
+    grid-template-columns: 1fr;
+  }
+  .ana-ai-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .dashboard-container { flex-direction: column; }
+  .dashboard-sidebar { width: 100%; padding: 1.5rem 1.25rem; }
+  .sidebar-brand h2 { margin-bottom: 1rem; border-left: none; padding-left: 0; }
+  .sidebar-menu { flex-direction: row; flex-wrap: wrap; gap: 0.5rem; }
+  .sidebar-item { width: auto; padding: 0.6rem 0.9rem; font-size: 0.88rem; }
+  .sidebar-footer { margin-top: 1rem; padding-top: 1rem; }
+  .sidebar-logout { display: inline-block; width: auto; }
+  .dashboard-main { padding: 1.75rem 1.25rem; gap: 1.5rem; }
+  .dashboard-hero { min-height: 180px; padding: 2rem 1.5rem; }
+  .hero-heading { font-size: 1.75rem; }
+  .dash-row-grid, .rooms-grid, .equipment-grid, .my-bookings-grid, .admin-summary-grid, .admin-actions-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .time-slots-grid { grid-template-columns: 1fr; }
+  .ana-header-row { flex-direction: column; gap: 1rem; }
+  .ana-controls { flex-wrap: wrap; }
+  .ana-summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .ana-two-col { grid-template-columns: 1fr; }
+  .ana-ai-grid { grid-template-columns: 1fr; }
+  .ana-breakdown-day { min-width: 70px; font-size: 0.82rem; }
+  .ana-bar-label { min-width: 100px; font-size: 0.82rem; }
+}
+
+@media (max-width: 680px) {
+  .welcome-container { padding: 2.5rem 1.25rem; }
+  .main-heading { font-size: 1.85rem; }
+  .subtitle { font-size: 1rem; margin-bottom: 2.25rem; }
+  .cards-wrapper { flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; }
+  .glass-card { width: 100%; max-width: 320px; padding: 2.25rem 1.75rem; }
+  .login-card { padding: 2rem 1.4rem; max-width: 100%; }
+  .login-title { font-size: 1.5rem; margin-bottom: 1.5rem; }
+  .ana-summary-grid { grid-template-columns: 1fr; }
+  .ana-breakdown-row { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+  .ana-breakdown-bars { width: 100%; }
+  .ana-breakdown-nums { justify-content: flex-start; }
+}
+
+/* ====================================================
+   ADMIN MODAL FORM & INPUT CLARITY
+   ==================================================== */
+.admin-edit-modal {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.admin-edit-modal .modal-title {
+  color: #0f172a !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.admin-edit-modal .form-group {
+  margin-bottom: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  text-align: left !important;
+}
+
+.admin-edit-modal .form-label {
+  color: #334155 !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  margin-bottom: 0.35rem !important;
+  display: block !important;
+}
+
+.admin-edit-modal .form-input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.95rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-edit-modal .form-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.admin-edit-modal .form-input:focus {
+  border-color: #2563eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+  outline: none !important;
+}
+
+.admin-edit-modal .form-input-readonly {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  border-color: #e2e8f0 !important;
+  cursor: not-allowed !important;
+}
+
+.admin-edit-modal .form-select {
+  cursor: pointer !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.admin-edit-modal .form-select option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.admin-edit-modal .modal-prompt {
+  color: #475569 !important;
+  font-size: 0.95rem !important;
+  text-align: center !important;
+  margin-bottom: 1.25rem !important;
+}
+
