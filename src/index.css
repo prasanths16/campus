@@ -724,3 +724,24 @@
   margin-bottom: 1.25rem !important;
 }
 
+/* ====================================================
+   STUDENT MY BOOKINGS STATUS BADGE
+   ==================================================== */
+.my-booking-card-header .room-status-badge {
+  position: static;
+  top: auto;
+  right: auto;
+}
+
+.status-cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.status-pending {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+

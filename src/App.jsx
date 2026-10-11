@@ -1153,9 +1153,23 @@ function App() {
         }
         return data
       })
-      .then(() => {
+      .then((updatedRoom) => {
         setEditingRoom(null)
         setRoomSuccessMsg('Room updated successfully')
+        if (updatedRoom && updatedRoom.id) {
+          setRooms((prevRooms) =>
+            prevRooms.map((r) =>
+              r.id === updatedRoom.id
+                ? {
+                    ...r,
+                    ...updatedRoom,
+                    name: updatedRoom.roomName || updatedRoom.name || r.name,
+                    roomName: updatedRoom.roomName || updatedRoom.name || r.roomName,
+                  }
+                : r
+            )
+          )
+        }
         fetchRooms()
       })
       .catch((err) => {
@@ -2527,7 +2541,8 @@ function App() {
                 </thead>
                 <tbody>
                   {rooms.map((room, idx) => {
-                    const isAvailable = room.status !== 'Unavailable'
+                    const isUnavailable = (room.status || '').toUpperCase() === 'UNAVAILABLE'
+                    const isAvailable = !isUnavailable
                     return (
                       <tr key={room.id}>
                         <td className="cell-sno">{idx + 1}</td>
@@ -3934,7 +3949,7 @@ function App() {
                         <span className={`booking-type-badge ${isRoom ? 'type-room' : 'type-equipment'}`}>
                           {isRoom ? 'Room Booking' : 'Equipment Booking'}
                         </span>
-                        <span className={`room-status-badge status-${booking.status.toLowerCase()}`}>
+                        <span className={`room-status-badge status-${(booking.status || '').toLowerCase()}`}>
                           {booking.status}
                         </span>
                       </div>
