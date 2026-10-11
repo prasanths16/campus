@@ -15,7 +15,7 @@ import com.campus.backend.service.AnalyticsService;
 
 @RestController
 @RequestMapping("/api/admin/analytics")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"https://campus1234.netlify.app", "http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;

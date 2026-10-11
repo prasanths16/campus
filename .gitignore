@@ -1,3 +1,10 @@
 node_modules/
 dist/
 .env
+*.env
+*.env.*
+!.env.example
+*.p12
+*.jks
+!backend/src/main/resources/aiven-truststore.p12
+*.sql

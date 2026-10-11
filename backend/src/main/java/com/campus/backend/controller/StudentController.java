@@ -16,7 +16,7 @@ import com.campus.backend.service.AuthService;
 
 @RestController
 @RequestMapping("/api/student")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"https://campus1234.netlify.app", "http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 public class StudentController {
 
     private final AuthService authService;

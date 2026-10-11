@@ -20,7 +20,7 @@ import com.campus.backend.service.BookingService;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"https://campus1234.netlify.app", "http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 public class BookingController {
 
     private final BookingService bookingService;

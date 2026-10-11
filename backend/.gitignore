@@ -4,6 +4,14 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+.env
+*.env
+*.env.*
+!.env.example
+*.p12
+*.jks
+!src/main/resources/aiven-truststore.p12
+
 ### STS ###
 .apt_generated
 .classpath

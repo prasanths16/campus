@@ -22,7 +22,7 @@ import com.campus.backend.service.EquipmentService;
 import java.util.NoSuchElementException;
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"https://campus1234.netlify.app", "http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 public class EquipmentController {
 
     private final EquipmentService equipmentService;

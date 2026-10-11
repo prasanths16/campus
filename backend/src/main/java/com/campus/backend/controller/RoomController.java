@@ -17,7 +17,7 @@ import com.campus.backend.service.RoomService;
 
 @RestController
 @RequestMapping("/api/rooms")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"https://campus1234.netlify.app", "http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 public class RoomController {
 
     private final RoomService roomService;

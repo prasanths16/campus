@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import './index.css'
 
+// Centralized API Base URL (defaults to Render backend)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://campus-bx3i.onrender.com'
+
 // Persistent Storage Keys
 const STORAGE_KEY_BOOKINGS = 'campus_connect_my_bookings'
 const STORAGE_KEY_USERS = 'campus_connect_users'
@@ -472,7 +475,7 @@ function App() {
 
       if (userId) {
         setProfileError('')
-        fetch(`http://localhost:8080/api/student/profile/${userId}`)
+        fetch(`${API_BASE_URL}/api/student/profile/${userId}`)
           .then(async (res) => {
             const data = await res.json()
             if (!res.ok) {
@@ -511,7 +514,7 @@ function App() {
   const [recentActivity, setRecentActivity] = useState([])
 
   const fetchRecentActivity = () => {
-    fetch('http://localhost:8080/api/admin/analytics/recent-activity')
+    fetch(`${API_BASE_URL}/api/admin/analytics/recent-activity`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         if (Array.isArray(data)) {
@@ -523,7 +526,7 @@ function App() {
 
   useEffect(() => {
     if (currentPage === 'admin-dashboard') {
-      fetch('http://localhost:8080/api/student/count')
+      fetch(`${API_BASE_URL}/api/student/count`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && typeof data.count === 'number') {
@@ -543,7 +546,7 @@ function App() {
   const fetchRooms = () => {
     setRoomsLoading(true)
     setRoomsError('')
-    fetch('http://localhost:8080/api/rooms')
+    fetch(`${API_BASE_URL}/api/rooms`)
       .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => ({}))
@@ -612,7 +615,7 @@ function App() {
   const fetchEquipment = () => {
     setEquipLoading(true)
     setEquipError('')
-    fetch('http://localhost:8080/api/equipment')
+    fetch(`${API_BASE_URL}/api/equipment`)
       .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => ({}))
@@ -713,8 +716,8 @@ function App() {
       setAnalyticsError('')
       const url =
         viewMode === 'daily'
-          ? `http://localhost:8080/api/admin/analytics/daily?date=${selectedDate}`
-          : `http://localhost:8080/api/admin/analytics/weekly?week=${selectedWeek}`
+          ? `${API_BASE_URL}/api/admin/analytics/daily?date=${selectedDate}`
+          : `${API_BASE_URL}/api/admin/analytics/weekly?week=${selectedWeek}`
 
       fetch(url)
         .then(async (res) => {
@@ -772,7 +775,7 @@ function App() {
     const idToFetch = userId || getStoredUserId()
     if (!idToFetch) return
     setMyBookingsLoading(true)
-    fetch(`http://localhost:8080/api/bookings/user/${idToFetch}`)
+    fetch(`${API_BASE_URL}/api/bookings/user/${idToFetch}`)
       .then(async (res) => {
         let data = null
         try {
@@ -948,7 +951,7 @@ function App() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -984,7 +987,7 @@ function App() {
         setLoginError(data.message || 'Invalid register number or password.')
       }
     } catch (err) {
-      setLoginError('Unable to connect to backend server at http://localhost:8080.')
+      setLoginError(`Unable to connect to backend server at ${API_BASE_URL}.`)
     }
   }
 
@@ -1005,7 +1008,7 @@ function App() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1037,7 +1040,7 @@ function App() {
         setRegError(data.message || 'Registration failed')
       }
     } catch (err) {
-      setRegError('Unable to connect to backend server at http://localhost:8080.')
+      setRegError(`Unable to connect to backend server at ${API_BASE_URL}.`)
     }
   }
 
@@ -1063,7 +1066,7 @@ function App() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/admin/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1096,7 +1099,7 @@ function App() {
         setAdminError(data.message || 'Invalid email or password.')
       }
     } catch (err) {
-      setAdminError('Unable to connect to backend server at http://localhost:8080.')
+      setAdminError(`Unable to connect to backend server at ${API_BASE_URL}.`)
     }
   }
 
@@ -1135,7 +1138,7 @@ function App() {
       return
     }
 
-    fetch(`http://localhost:8080/api/admin/rooms/${editingRoom.id}`, {
+    fetch(`${API_BASE_URL}/api/admin/rooms/${editingRoom.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1186,7 +1189,7 @@ function App() {
     if (!deletingRoom) return
     setDeleteRoomError('')
 
-    fetch(`http://localhost:8080/api/admin/rooms/${deletingRoom.id}`, {
+    fetch(`${API_BASE_URL}/api/admin/rooms/${deletingRoom.id}`, {
       method: 'DELETE',
     })
       .then(async (res) => {
@@ -1235,7 +1238,7 @@ function App() {
     }
 
     setAddRoomError('')
-    fetch('http://localhost:8080/api/admin/rooms', {
+    fetch(`${API_BASE_URL}/api/admin/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1286,7 +1289,7 @@ function App() {
     }
 
     setAddEquipError('')
-    fetch('http://localhost:8080/api/admin/equipment', {
+    fetch(`${API_BASE_URL}/api/admin/equipment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1329,7 +1332,7 @@ function App() {
     }
 
     setEditEquipError('')
-    fetch(`http://localhost:8080/api/admin/equipment/${editEquip.id}`, {
+    fetch(`${API_BASE_URL}/api/admin/equipment/${editEquip.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1364,7 +1367,7 @@ function App() {
     if (!deleteEquip) return
     setDeleteEquipError('')
 
-    fetch(`http://localhost:8080/api/admin/equipment/${deleteEquip.id}`, {
+    fetch(`${API_BASE_URL}/api/admin/equipment/${deleteEquip.id}`, {
       method: 'DELETE',
     })
       .then(async (res) => {
@@ -1425,7 +1428,7 @@ function App() {
 
     setBookingLoading(true)
     setBookingError('')
-    fetch('http://localhost:8080/api/bookings/room', {
+    fetch(`${API_BASE_URL}/api/bookings/room`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1477,7 +1480,7 @@ function App() {
 
     setEquipBookingLoading(true)
     setEquipBookingError('')
-    fetch('http://localhost:8080/api/bookings/equipment', {
+    fetch(`${API_BASE_URL}/api/bookings/equipment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1534,8 +1537,8 @@ function App() {
 
     const isRoom = cancelModalBooking.type === 'room'
     const url = isRoom
-      ? `http://localhost:8080/api/bookings/room/${numericId}/cancel`
-      : `http://localhost:8080/api/bookings/equipment/${numericId}/cancel`
+      ? `${API_BASE_URL}/api/bookings/room/${numericId}/cancel`
+      : `${API_BASE_URL}/api/bookings/equipment/${numericId}/cancel`
 
     setCancelLoading(true)
     setCancelErrorMsg('')
