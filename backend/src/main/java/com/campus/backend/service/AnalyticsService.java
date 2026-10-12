@@ -22,6 +22,7 @@ import com.campus.backend.entity.RoomBooking;
 import com.campus.backend.repository.EquipmentBookingRepository;
 import com.campus.backend.repository.EquipmentRepository;
 import com.campus.backend.repository.RoomBookingRepository;
+import java.time.ZoneId;
 import com.campus.backend.repository.RoomRepository;
 
 @Service
@@ -29,6 +30,7 @@ public class AnalyticsService {
 
     private static final List<String> ACTIVE_STATUSES = Arrays.asList("BOOKED", "PENDING");
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE; // yyyy-MM-dd
+    private static final ZoneId CAMPUS_ZONE = ZoneId.of("Asia/Kolkata");
 
     private final RoomBookingRepository roomBookingRepository;
     private final EquipmentBookingRepository equipmentBookingRepository;
@@ -51,12 +53,23 @@ public class AnalyticsService {
         if (date != null) {
             date = date.trim();
         }
-        List<RoomBooking> rbs = roomBookingRepository.findByBookingDateAndStatusIn(date, ACTIVE_STATUSES);
-        List<EquipmentBooking> ebs = equipmentBookingRepository.findByBookingDateAndStatusIn(date, ACTIVE_STATUSES);
+        if (date == null || date.isEmpty() || "today".equalsIgnoreCase(date)) {
+            date = LocalDate.now(CAMPUS_ZONE).format(DATE_FMT);
+        }
+
+        LocalDate targetDate;
+        try {
+            targetDate = LocalDate.parse(date, DATE_FMT);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid date format. Expected: YYYY-MM-DD, e.g. 2026-10-11");
+        }
+        String cleanDate = targetDate.format(DATE_FMT);
+
+        List<RoomBooking> rbs = roomBookingRepository.findByBookingDateAndStatusIn(cleanDate, ACTIVE_STATUSES);
+        List<EquipmentBooking> ebs = equipmentBookingRepository.findByBookingDateAndStatusIn(cleanDate, ACTIVE_STATUSES);
 
         // AI Recommendations use all available booking data from the start of the week (Monday)
         // up to the target date (Monday -> Monday; Tuesday -> Monday+Tuesday; Wednesday -> Monday+Tuesday+Wednesday, etc.)
-        LocalDate targetDate = LocalDate.parse(date, DATE_FMT);
         LocalDate monday = targetDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
         String fromDate = monday.format(DATE_FMT);
@@ -87,7 +100,7 @@ public class AnalyticsService {
         long pendingEquips = ebs.stream().filter(eb -> "PENDING".equalsIgnoreCase(eb.getStatus())).count();
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("date", date);
+        result.put("date", cleanDate);
         result.put("totalBookings", rbs.size() + ebs.size());
         result.put("roomBookings", rbs.size());
         result.put("equipmentBookings", ebs.size());
@@ -102,22 +115,53 @@ public class AnalyticsService {
     // ── Weekly Analytics ──────────────────────────────────────────────────────
 
     /**
-     * Parse week string like "2026-W40" and return analytics for Mon–Sun of that week.
+     * Parse week string (supports "2026-W40", "this-week", "previous-week", etc.)
+     * and return analytics for Mon–Sun of that week calculated from actual DB records.
      */
     public Map<String, Object> getWeeklyAnalytics(String week) {
-        // Parse year and week number
-        String[] parts = week.split("-W");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid week format. Expected: YYYY-WWW, e.g. 2026-W40");
+        if (week != null) {
+            week = week.trim();
         }
-        int year = Integer.parseInt(parts[0]);
-        int weekNum = Integer.parseInt(parts[1]);
+        if (week == null || week.isEmpty()) {
+            week = "this-week";
+        }
 
-        // Determine Monday and Sunday of that ISO week
-        LocalDate monday = LocalDate.of(year, 1, 4) // Jan 4 is always in week 1
-                .with(IsoFields.WEEK_OF_WEEK_BASED_YEAR, weekNum)
-                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDate sunday = monday.plusDays(6);
+        LocalDate monday;
+        LocalDate sunday;
+        String resolvedIsoWeek;
+
+        LocalDate today = LocalDate.now(CAMPUS_ZONE);
+
+        if ("this-week".equalsIgnoreCase(week) || "this_week".equalsIgnoreCase(week)
+                || "current".equalsIgnoreCase(week) || "current-week".equalsIgnoreCase(week)) {
+            monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            sunday = monday.plusDays(6);
+            int wNum = monday.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+            int yNum = monday.get(IsoFields.WEEK_BASED_YEAR);
+            resolvedIsoWeek = String.format("%04d-W%02d", yNum, wNum);
+        } else if ("previous-week".equalsIgnoreCase(week) || "prev-week".equalsIgnoreCase(week)
+                || "previous_week".equalsIgnoreCase(week) || "last-week".equalsIgnoreCase(week)) {
+            monday = today.minusWeeks(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            sunday = monday.plusDays(6);
+            int wNum = monday.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+            int yNum = monday.get(IsoFields.WEEK_BASED_YEAR);
+            resolvedIsoWeek = String.format("%04d-W%02d", yNum, wNum);
+        } else {
+            // Parse year and week number e.g. "2026-W41"
+            String[] parts = week.split("-W");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid week format. Expected: YYYY-WWW, 'this-week', or 'previous-week'. Received: " + week);
+            }
+            int year = Integer.parseInt(parts[0]);
+            int weekNum = Integer.parseInt(parts[1]);
+
+            // Determine Monday and Sunday of that ISO week
+            monday = LocalDate.of(year, 1, 4) // Jan 4 is always in week 1
+                    .with(IsoFields.WEEK_OF_WEEK_BASED_YEAR, weekNum)
+                    .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            sunday = monday.plusDays(6);
+            resolvedIsoWeek = String.format("%04d-W%02d", year, weekNum);
+        }
 
         String fromDate = monday.format(DATE_FMT);
         String toDate = sunday.format(DATE_FMT);
@@ -145,7 +189,8 @@ public class AnalyticsService {
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("week", week);
+        result.put("week", resolvedIsoWeek);
+        result.put("requestedWeek", week);
         result.put("from", fromDate);
         result.put("to", toDate);
         result.put("totalBookings", rbs.size() + ebs.size());

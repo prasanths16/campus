@@ -1,6 +1,8 @@
 package com.campus.backend.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -27,6 +29,7 @@ import com.campus.backend.repository.UserRepository;
 public class BookingService {
 
     private static final List<String> ACTIVE_STATUSES = Arrays.asList("BOOKED", "PENDING");
+    private static final ZoneId CAMPUS_ZONE = ZoneId.of("Asia/Kolkata");
 
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
@@ -102,7 +105,7 @@ public class BookingService {
         booking.setBookingDate(request.getBookingDate());
         booking.setTimeSlot(request.getTimeSlot());
         booking.setStatus("BOOKED");
-        booking.setCreatedAt(LocalDateTime.now());
+        booking.setCreatedAt(LocalDateTime.now(CAMPUS_ZONE));
 
         return roomBookingRepository.save(booking);
     }
@@ -158,7 +161,7 @@ public class BookingService {
         booking.setTimeSlot(request.getTimeSlot());
         booking.setQuantity(request.getQuantity());
         booking.setStatus("BOOKED");
-        booking.setCreatedAt(LocalDateTime.now());
+        booking.setCreatedAt(LocalDateTime.now(CAMPUS_ZONE));
 
         return equipmentBookingRepository.save(booking);
     }
@@ -170,8 +173,18 @@ public class BookingService {
         RoomBooking booking = roomBookingRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Room booking not found with id: " + id));
 
-        if (LocalDateTime.now().isAfter(booking.getCreatedAt().plusMinutes(30))) {
-            throw new IllegalStateException("Cancellation period has expired.");
+        if ("CANCELLED".equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalStateException("Booking is already cancelled.");
+        }
+        if (!ACTIVE_STATUSES.contains(booking.getStatus().toUpperCase())) {
+            throw new IllegalStateException("Booking is not eligible for cancellation.");
+        }
+
+        // Enforce 30-minute rule: cancellation is only allowed once 30 minutes have elapsed
+        LocalDateTime now = LocalDateTime.now(CAMPUS_ZONE);
+        LocalDateTime createdAt = booking.getCreatedAt();
+        if (createdAt != null && now.isBefore(createdAt.plusMinutes(30))) {
+            throw new IllegalStateException("Bookings cannot be cancelled within the first 30 minutes of creation.");
         }
 
         booking.setStatus("CANCELLED");
@@ -183,8 +196,18 @@ public class BookingService {
         EquipmentBooking booking = equipmentBookingRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Equipment booking not found with id: " + id));
 
-        if (LocalDateTime.now().isAfter(booking.getCreatedAt().plusMinutes(30))) {
-            throw new IllegalStateException("Cancellation period has expired.");
+        if ("CANCELLED".equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalStateException("Booking is already cancelled.");
+        }
+        if (!ACTIVE_STATUSES.contains(booking.getStatus().toUpperCase())) {
+            throw new IllegalStateException("Booking is not eligible for cancellation.");
+        }
+
+        // Enforce 30-minute rule: cancellation is only allowed once 30 minutes have elapsed
+        LocalDateTime now = LocalDateTime.now(CAMPUS_ZONE);
+        LocalDateTime createdAt = booking.getCreatedAt();
+        if (createdAt != null && now.isBefore(createdAt.plusMinutes(30))) {
+            throw new IllegalStateException("Bookings cannot be cancelled within the first 30 minutes of creation.");
         }
 
         booking.setStatus("CANCELLED");
@@ -209,7 +232,7 @@ public class BookingService {
             entry.put("bookingDate", rb.getBookingDate());
             entry.put("timeSlot", rb.getTimeSlot());
             entry.put("status", rb.getStatus());
-            entry.put("createdAt", rb.getCreatedAt());
+            entry.put("createdAt", formatIsoOffset(rb.getCreatedAt()));
             entry.put("roomId", rb.getRoomId());
             roomRepository.findById(rb.getRoomId()).ifPresent(room -> {
                 entry.put("roomName", room.getRoomName());
@@ -229,7 +252,7 @@ public class BookingService {
             entry.put("timeSlot", eb.getTimeSlot());
             entry.put("quantity", eb.getQuantity());
             entry.put("status", eb.getStatus());
-            entry.put("createdAt", eb.getCreatedAt());
+            entry.put("createdAt", formatIsoOffset(eb.getCreatedAt()));
             entry.put("equipmentId", eb.getEquipmentId());
             equipmentRepository.findById(eb.getEquipmentId()).ifPresent(eq -> {
                 entry.put("equipmentName", eq.getEquipmentName());
@@ -243,5 +266,10 @@ public class BookingService {
         result.put("roomBookings", roomList);
         result.put("equipmentBookings", equipmentList);
         return result;
+    }
+
+    private String formatIsoOffset(LocalDateTime dt) {
+        if (dt == null) return null;
+        return dt.atZone(CAMPUS_ZONE).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 }

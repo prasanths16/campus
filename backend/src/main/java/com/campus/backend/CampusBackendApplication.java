@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.TimeZone;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -18,6 +19,7 @@ public class CampusBackendApplication {
     }
 
     public static void initEnvironment() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
         loadDotenv();
         configureTruststore();
     }

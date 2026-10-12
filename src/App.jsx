@@ -138,36 +138,70 @@ const getInitialCurrentUser = () => {
 }
 
 // --------------------------------------------------------
-// DATE / TIME HELPER FUNCTIONS
+// DATE / TIME HELPER FUNCTIONS (Asia/Kolkata timezone)
 // --------------------------------------------------------
 
-// Returns 'YYYY-MM-DD' for today using local browser time
-const getTodayDate = () => {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = String(now.getMonth() + 1).padStart(2, '0')
-  const d = String(now.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+// Formats any Date or string to 'YYYY-MM-DD' in Asia/Kolkata
+const getCampusDateString = (dateObj = new Date()) => {
+  const d = dateObj instanceof Date ? dateObj : new Date(dateObj)
+  if (isNaN(d.getTime())) return ''
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  return formatter.format(d)
 }
 
-// Returns 'YYYY-MM-DD' for tomorrow using local browser time
+// Returns campus current time parts in Asia/Kolkata
+const getCampusTimeParts = (dateObj = new Date()) => {
+  const d = dateObj instanceof Date ? dateObj : new Date(dateObj)
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hour12: false,
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
+  const parts = formatter.formatToParts(d)
+  const findPart = (type) => parseInt(parts.find((p) => p.type === type)?.value || '0', 10)
+  return {
+    hours: findPart('hour'),
+    minutes: findPart('minute'),
+    seconds: findPart('second'),
+  }
+}
+
+// Returns 'YYYY-MM-DD' for today using Asia/Kolkata campus time
+const getTodayDate = () => getCampusDateString(new Date())
+
+// Returns 'YYYY-MM-DD' for tomorrow using Asia/Kolkata campus time
 const getTomorrowDate = () => {
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const y = tomorrow.getFullYear()
-  const m = String(tomorrow.getMonth() + 1).padStart(2, '0')
-  const d = String(tomorrow.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  const now = new Date()
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+  return getCampusDateString(tomorrow)
 }
 
-// Returns 'YYYY-Www' for current date using ISO-8601 week definition
-const getCurrentIsoWeekString = (dateObj = new Date()) => {
-  const d = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
-  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
+// Returns 'YYYY-Www' for ISO-8601 week based on Asia/Kolkata date
+const getCampusIsoWeekString = (dateObj = new Date()) => {
+  const dateStr = getCampusDateString(dateObj) // 'YYYY-MM-DD'
+  if (!dateStr) return ''
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const target = new Date(Date.UTC(y, m - 1, d))
+  const dayNr = target.getUTCDay() || 7
+  target.setUTCDate(target.getUTCDate() + 4 - dayNr)
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil(((target - yearStart) / 86400000 + 1) / 7)
+  return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
+}
+
+const getCurrentIsoWeekString = (dateObj = new Date()) => getCampusIsoWeekString(dateObj)
+
+const getPreviousIsoWeekString = (dateObj = new Date()) => {
+  const d = dateObj instanceof Date ? dateObj : new Date(dateObj)
+  const prevWeek = new Date(d.getTime() - 7 * 24 * 60 * 60 * 1000)
+  return getCampusIsoWeekString(prevWeek)
 }
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -207,10 +241,9 @@ const formatBookingDate = (dateVal) => {
   return str
 }
 
-// Returns true if current time is at or after 8:00 PM (20:00 - 23:59)
+// Returns true if current campus time is at or after 8:00 PM (20:00 - 23:59 Asia/Kolkata)
 const isAtOrAfter8PM = () => {
-  const now = new Date()
-  return now.getHours() >= 20
+  return getCampusTimeParts().hours >= 20
 }
 
 // Returns true if booking is currently open
@@ -242,8 +275,8 @@ const isRoomSlotOpen = (slot) => {
     return true
   }
 
-  const now = new Date()
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const campusTime = getCampusTimeParts()
+  const currentMinutes = campusTime.hours * 60 + campusTime.minutes
   // Parse cutoff string e.g. '8:15 AM'
   const cutoffParts = slot.cutoff.match(/(\d+):(\d+)\s*(AM|PM)/i)
   if (!cutoffParts) return true
@@ -265,8 +298,8 @@ const isEquipmentBookingOpen = () => {
     return true
   }
 
-  const now = new Date()
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const campusTime = getCampusTimeParts()
+  const currentMinutes = campusTime.hours * 60 + campusTime.minutes
   const cutoffMinutes = 16 * 60 // 4:00 PM
   return currentMinutes < cutoffMinutes
 }
@@ -711,31 +744,55 @@ function App() {
 
   // Fetch analytics from backend whenever on analytics page and filters change or bookings update
   useEffect(() => {
-    if (currentPage === 'admin-analytics') {
-      setAnalyticsLoading(true)
-      setAnalyticsError('')
-      const url =
-        viewMode === 'daily'
-          ? `${API_BASE_URL}/api/admin/analytics/daily?date=${selectedDate}`
-          : `${API_BASE_URL}/api/admin/analytics/weekly?week=${selectedWeek}`
+    if (currentPage !== 'admin-analytics') return
 
-      fetch(url)
-        .then(async (res) => {
-          const data = await res.json().catch(() => ({}))
-          if (!res.ok) {
-            throw new Error(data.message || 'Failed to fetch analytics')
-          }
-          return data
-        })
-        .then((data) => {
-          setAnalyticsData(data)
-        })
-        .catch((err) => {
-          setAnalyticsError(err.message || 'Unable to load analytics data')
-        })
-        .finally(() => {
+    const controller = new AbortController()
+    let isCurrent = true
+
+    setAnalyticsLoading(true)
+    setAnalyticsError('')
+
+    const targetDate = selectedDate
+    const targetWeek = selectedWeek
+    const targetMode = viewMode
+
+    const url =
+      targetMode === 'daily'
+        ? `${API_BASE_URL}/api/admin/analytics/daily?date=${targetDate}`
+        : `${API_BASE_URL}/api/admin/analytics/weekly?week=${targetWeek}`
+
+    fetch(url, { signal: controller.signal })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          throw new Error(data.message || 'Failed to fetch analytics')
+        }
+        return data
+      })
+      .then((data) => {
+        if (!isCurrent) return
+        // Guard against race conditions: only accept responses for the current filter
+        if (targetMode === 'daily' && data && data.date && data.date !== targetDate) {
+          return
+        }
+        if (targetMode === 'weekly' && data && data.requestedWeek && data.requestedWeek !== targetWeek) {
+          return
+        }
+        setAnalyticsData(data)
+      })
+      .catch((err) => {
+        if (!isCurrent || err.name === 'AbortError') return
+        setAnalyticsError(err.message || 'Unable to load analytics data')
+      })
+      .finally(() => {
+        if (isCurrent) {
           setAnalyticsLoading(false)
-        })
+        }
+      })
+
+    return () => {
+      isCurrent = false
+      controller.abort()
     }
   }, [currentPage, viewMode, selectedDate, selectedWeek, analyticsRefreshTrigger])
 
@@ -908,20 +965,46 @@ function App() {
     return () => clearInterval(timer)
   }, [])
 
-  // Helper to check 30-minute cancellation eligibility using current real browser time
-  // Handles both ISO datetime strings (from backend) and JS timestamps (legacy)
-  const isWithin30Mins = (booking) => {
+  // Helper to parse booking creation timestamp to UTC epoch milliseconds
+  const parseBookingCreatedAtMs = (val) => {
+    if (!val) return null
+    if (typeof val === 'number') return val
+    const str = String(val).trim()
+    if (!str) return null
+    if (/^\d+$/.test(str)) return Number(str)
+    if (str.includes('+') || str.endsWith('Z') || str.includes('GMT')) {
+      const t = new Date(str).getTime()
+      return isNaN(t) ? null : t
+    }
+    // If ISO datetime string without offset, interpret in Asia/Kolkata (+05:30)
+    const isoWithZone = str.replace(' ', 'T') + '+05:30'
+    const t = new Date(isoWithZone).getTime()
+    if (!isNaN(t)) return t
+    const fallback = new Date(str).getTime()
+    return isNaN(fallback) ? null : fallback
+  }
+
+  // 30-Minute Cancellation Rule:
+  // Hide or disable the Cancel Booking button for the first 30 minutes after creation.
+  // Once 30 minutes have elapsed, show and enable for eligible bookings (BOOKED or PENDING).
+  // Never allow cancellation for already CANCELLED or other ineligible bookings.
+  const isEligibleForCancellation = (booking) => {
+    if (!booking) return false
+    const statusUpper = (booking.status || booking.rawStatus || '').toUpperCase()
+    if (statusUpper !== 'BOOKED' && statusUpper !== 'PENDING') return false
+
     const createdAt = typeof booking === 'object' && booking !== null
       ? (booking.createdAt ?? booking.bookedAt)
       : booking
-    if (!createdAt) return false
-    // Parse ISO datetime string from backend (e.g. '2026-10-01T10:30:00')
-    const createdAtMs = typeof createdAt === 'string' ? new Date(createdAt).getTime() : Number(createdAt)
-    if (isNaN(createdAtMs)) return false
+    const createdAtMs = parseBookingCreatedAtMs(createdAt)
+    if (!createdAtMs) return false
+
     const elapsedTime = Date.now() - createdAtMs
     const THIRTY_MINUTES_MS = 30 * 60 * 1000 // 30 minutes in ms
-    return elapsedTime >= 0 && elapsedTime < THIRTY_MINUTES_MS
+    return elapsedTime >= THIRTY_MINUTES_MS
   }
+
+  const isWithin30Mins = isEligibleForCancellation
 
   // Student logout handler: clears user info and cached bookings, returns to Home
   const handleStudentLogout = () => {
@@ -3183,13 +3266,17 @@ function App() {
                     value={selectedWeek}
                     onChange={e => setSelectedWeek(e.target.value)}
                   >
-                    {!['2026-W39', '2026-W40', '2026-W41', '2026-W42'].includes(selectedWeek) && (
+                    <option value={getCurrentIsoWeekString()}>This Week</option>
+                    <option value={getPreviousIsoWeekString()}>Previous Week</option>
+                    <option value="this-week">This Week (Current)</option>
+                    <option value="previous-week">Previous Week (Past)</option>
+                    <option value="2026-W42">Week 42</option>
+                    <option value="2026-W41">Week 41</option>
+                    <option value="2026-W40">Week 40</option>
+                    <option value="2026-W39">Week 39</option>
+                    {![getCurrentIsoWeekString(), getPreviousIsoWeekString(), 'this-week', 'previous-week', '2026-W39', '2026-W40', '2026-W41', '2026-W42'].includes(selectedWeek) && (
                       <option value={selectedWeek}>{selectedWeek}</option>
                     )}
-                    <option value="2026-W39">Week 39</option>
-                    <option value="2026-W40">Week 40</option>
-                    <option value="2026-W41">Week 41</option>
-                    <option value="2026-W42">Week 42</option>
                   </select>
                   <input
                     type="week"
@@ -3940,9 +4027,9 @@ function App() {
             ) : (
               <div className="my-bookings-grid">
                 {myBookings.map((booking) => {
-                  const statusUpper = (booking.status || '').toUpperCase()
+                  const statusUpper = (booking.status || booking.rawStatus || '').toUpperCase()
                   const isStatusActive = statusUpper === 'BOOKED' || statusUpper === 'PENDING'
-                  const cancellable = isStatusActive && isWithin30Mins(booking)
+                  const cancellable = isStatusActive && isEligibleForCancellation(booking)
                   const isRoom = booking.type === 'room'
 
                   return (
@@ -4015,7 +4102,7 @@ function App() {
                           )}
                         </div>
 
-                        {/* Cancel Button only when within 30 mins */}
+                        {/* Cancel Button appears after 30 minutes from booking creation for eligible bookings */}
                         {cancellable && (
                           <div className="my-booking-card-footer">
                             <button
