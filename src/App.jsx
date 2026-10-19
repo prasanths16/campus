@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import './index.css'
 
 // Centralized API Base URL (defaults to Render backend)
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://campus-bx3i.onrender.com';
 
 // Persistent Storage Keys
 const STORAGE_KEY_BOOKINGS = 'campus_connect_my_bookings'
