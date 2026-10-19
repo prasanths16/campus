@@ -57,6 +57,21 @@ public class AnalyticsController {
     }
 
     /**
+     * GET /api/admin/analytics/available-weeks
+     * GET /api/admin/analytics/weeks
+     * Returns dynamically generated week options (Week 1, Week 2, ...) based on database booking history.
+     */
+    @GetMapping({"/available-weeks", "/weeks"})
+    public ResponseEntity<?> getAvailableWeeks() {
+        try {
+            return ResponseEntity.ok(analyticsService.getAvailableWeeks());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "error", "message", "An unexpected error occurred: " + e.getMessage()));
+        }
+    }
+
+    /**
      * GET /api/admin/analytics/recent-activity
      * Returns the 10 most recent booking/cancellation events (room + equipment), newest first.
      */

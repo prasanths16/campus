@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import './index.css'
 
 // Centralized API Base URL (defaults to Render backend)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://campus-bx3i.onrender.com'
+const API_BASE_URL = 'http://localhost:8080';
 
 // Persistent Storage Keys
 const STORAGE_KEY_BOOKINGS = 'campus_connect_my_bookings'
@@ -202,6 +202,60 @@ const getPreviousIsoWeekString = (dateObj = new Date()) => {
   const d = dateObj instanceof Date ? dateObj : new Date(dateObj)
   const prevWeek = new Date(d.getTime() - 7 * 24 * 60 * 60 * 1000)
   return getCampusIsoWeekString(prevWeek)
+}
+
+// Automatically generates week options (Week 1, Week 2, ...) based on booking dates and year boundaries
+const generateWeekOptionsFromDates = (bookingDates = [], currentWeekStr = getCurrentIsoWeekString()) => {
+  const allDates = new Set()
+  if (Array.isArray(bookingDates)) {
+    bookingDates.forEach(d => {
+      if (d && typeof d === 'string' && d.trim()) allDates.add(d.trim())
+    })
+  }
+
+  const [currYearStr, currWeekNumStr] = (currentWeekStr || '2026-W42').split('-W')
+  const currentYear = parseInt(currYearStr, 10) || 2026
+  const currentWeek = parseInt(currWeekNumStr, 10) || 42
+
+  const maxWeekByYear = new Map()
+  const weeksWithBookings = new Set()
+
+  allDates.forEach(dateStr => {
+    const isoWeek = getCampusIsoWeekString(dateStr)
+    if (isoWeek && isoWeek.includes('-W')) {
+      weeksWithBookings.add(isoWeek)
+      const [yStr, wStr] = isoWeek.split('-W')
+      const y = parseInt(yStr, 10)
+      const w = parseInt(wStr, 10)
+      if (!isNaN(y) && !isNaN(w)) {
+        maxWeekByYear.set(y, Math.max(maxWeekByYear.get(y) || 0, w))
+      }
+    }
+  })
+
+  // Ensure current year is present up to current week
+  maxWeekByYear.set(currentYear, Math.max(maxWeekByYear.get(currentYear) || 0, currentWeek))
+
+  const sortedYears = Array.from(maxWeekByYear.keys()).sort((a, b) => a - b)
+  const hasMultipleYears = sortedYears.length > 1
+
+  const options = []
+  sortedYears.forEach(year => {
+    const maxW = maxWeekByYear.get(year) || 1
+    for (let w = 1; w <= maxW; w++) {
+      const val = `${year}-W${String(w).padStart(2, '0')}`
+      const label = hasMultipleYears ? `Week ${w} (${year})` : `Week ${w}`
+      options.push({
+        value: val,
+        label,
+        year,
+        weekNumber: w,
+        hasBookings: weeksWithBookings.has(val)
+      })
+    }
+  })
+
+  return options
 }
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -730,11 +784,15 @@ function App() {
   // Analytics state
   const [viewMode, setViewMode] = useState('daily') // 'daily' | 'weekly'
   const [selectedDate, setSelectedDate] = useState(() => getTodayDate())
-  const [selectedWeek, setSelectedWeek] = useState(() => getCurrentIsoWeekString())
+  const [selectedWeek, setSelectedWeek] = useState('this-week')
+  const [availableWeekOptions, setAvailableWeekOptions] = useState(() =>
+    generateWeekOptionsFromDates([], getCurrentIsoWeekString())
+  )
   const [analyticsRefreshTrigger, setAnalyticsRefreshTrigger] = useState(0)
   const [analyticsData, setAnalyticsData] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
   const [analyticsError, setAnalyticsError] = useState('')
+  const analyticsRequestIdRef = useRef(0)
   const analyticsMode = viewMode
   const setAnalyticsMode = setViewMode
   const analyticsDate = selectedDate
@@ -742,15 +800,38 @@ function App() {
   const analyticsWeek = selectedWeek
   const setAnalyticsWeek = setSelectedWeek
 
+  // Fetch available weeks generated from database booking history
+  useEffect(() => {
+    if (currentPage !== 'admin-analytics') return
+
+    let isMounted = true
+    fetch(`${API_BASE_URL}/api/admin/analytics/available-weeks`)
+      .then(res => res.json())
+      .then(data => {
+        if (!isMounted) return
+        if (Array.isArray(data) && data.length > 0) {
+          setAvailableWeekOptions(data)
+        }
+      })
+      .catch(() => {
+        // Handled via local fallback in state
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [currentPage, analyticsRefreshTrigger])
+
   // Fetch analytics from backend whenever on analytics page and filters change or bookings update
   useEffect(() => {
     if (currentPage !== 'admin-analytics') return
 
     const controller = new AbortController()
-    let isCurrent = true
+    const currentRequestId = ++analyticsRequestIdRef.current
 
     setAnalyticsLoading(true)
     setAnalyticsError('')
+    setAnalyticsData(null) // Clear immediately so old-date data is never presented as if it belongs to the newly selected date
 
     const targetDate = selectedDate
     const targetWeek = selectedWeek
@@ -758,8 +839,8 @@ function App() {
 
     const url =
       targetMode === 'daily'
-        ? `${API_BASE_URL}/api/admin/analytics/daily?date=${targetDate}`
-        : `${API_BASE_URL}/api/admin/analytics/weekly?week=${targetWeek}`
+        ? `${API_BASE_URL}/api/admin/analytics/daily?date=${encodeURIComponent(targetDate)}`
+        : `${API_BASE_URL}/api/admin/analytics/weekly?week=${encodeURIComponent(targetWeek)}`
 
     fetch(url, { signal: controller.signal })
       .then(async (res) => {
@@ -770,40 +851,29 @@ function App() {
         return data
       })
       .then((data) => {
-        if (!isCurrent) return
-        // Guard against race conditions: only accept responses for the current filter
-        if (targetMode === 'daily' && data && data.date && data.date !== targetDate) {
-          return
+        // Discard any stale or out-of-order response
+        if (currentRequestId !== analyticsRequestIdRef.current) return
+
+        // Verify response matches current mode and date/week
+        if (targetMode === 'daily') {
+          if (!data || data.date !== targetDate) return
+        } else if (targetMode === 'weekly') {
+          if (!data || (data.requestedWeek !== targetWeek && data.week !== targetWeek)) return
         }
-        if (targetMode === 'weekly' && data && data.requestedWeek && data.requestedWeek !== targetWeek) {
-          return
-        }
+
         setAnalyticsData(data)
+        setAnalyticsLoading(false)
       })
       .catch((err) => {
-        if (!isCurrent || err.name === 'AbortError') return
+        if (err.name === 'AbortError' || currentRequestId !== analyticsRequestIdRef.current) return
         setAnalyticsError(err.message || 'Unable to load analytics data')
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setAnalyticsLoading(false)
-        }
+        setAnalyticsLoading(false)
       })
 
     return () => {
-      isCurrent = false
       controller.abort()
     }
   }, [currentPage, viewMode, selectedDate, selectedWeek, analyticsRefreshTrigger])
-
-  // Poll for analytics updates every 4s while viewing analytics so external/new bookings refresh dynamically
-  useEffect(() => {
-    if (currentPage !== 'admin-analytics') return
-    const timer = setInterval(() => {
-      setAnalyticsRefreshTrigger((prev) => prev + 1)
-    }, 4000)
-    return () => clearInterval(timer)
-  }, [currentPage])
 
   // Helper to retrieve logged-in student id from currentUser or localStorage
   const getStoredUserId = () => {
@@ -911,8 +981,8 @@ function App() {
             roomId: rb.roomId,
             status: rb.status ? (rb.status.charAt(0).toUpperCase() + rb.status.slice(1).toLowerCase()) : 'Booked',
             rawStatus: rb.status || 'BOOKED',
-            createdAt: rb.createdAt,
-            bookedAt: rb.createdAt,
+            createdAt: rb.createdAt || rb.created_at || rb.bookedAt,
+            bookedAt: rb.createdAt || rb.created_at || rb.bookedAt,
           })),
           ...equipList.map((eb) => ({
             id: `eb-${eb.id}`,
@@ -929,12 +999,12 @@ function App() {
             equipmentId: eb.equipmentId,
             status: eb.status ? (eb.status.charAt(0).toUpperCase() + eb.status.slice(1).toLowerCase()) : 'Booked',
             rawStatus: eb.status || 'BOOKED',
-            createdAt: eb.createdAt,
-            bookedAt: eb.createdAt,
+            createdAt: eb.createdAt || eb.created_at || eb.bookedAt,
+            bookedAt: eb.createdAt || eb.created_at || eb.bookedAt,
           }))
         ].sort((a, b) => {
-          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
-          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+          const timeA = parseBookingCreatedAtMs(a.createdAt) || 0
+          const timeB = parseBookingCreatedAtMs(b.createdAt) || 0
           return timeB - timeA
         })
 
@@ -969,39 +1039,72 @@ function App() {
   const parseBookingCreatedAtMs = (val) => {
     if (!val) return null
     if (typeof val === 'number') return val
+    if (Array.isArray(val)) {
+      // Jackson LocalDateTime array serialization [year, month, day, hour, minute, second]
+      const [y, m, d, h = 0, min = 0, s = 0] = val
+      const dateUtc = Date.UTC(y, m - 1, d, h, min, s)
+      const dateIst = dateUtc - (5.5 * 60 * 60 * 1000)
+      const now = Date.now()
+      const diffIst = now - dateIst
+      if (diffIst >= 0 && diffIst < 30 * 60 * 1000) return dateIst
+      const diffUtc = now - dateUtc
+      if (diffUtc >= 0 && diffUtc < 30 * 60 * 1000) return dateUtc
+      return dateIst
+    }
     const str = String(val).trim()
     if (!str) return null
     if (/^\d+$/.test(str)) return Number(str)
-    if (str.includes('+') || str.endsWith('Z') || str.includes('GMT')) {
-      const t = new Date(str).getTime()
-      return isNaN(t) ? null : t
+
+    // 1. Explicit timezone offset present (+05:30, Z, GMT, etc.)
+    if (str.includes('+') || str.endsWith('Z') || str.includes('GMT') || /T.*[+-]\d{2}:?\d{2}$/.test(str)) {
+      const normalized = str.replace(/\.(\d{3})\d+/, '.$1')
+      const t = new Date(normalized).getTime()
+      if (!isNaN(t)) return t
     }
-    // If ISO datetime string without offset, interpret in Asia/Kolkata (+05:30)
-    const isoWithZone = str.replace(' ', 'T') + '+05:30'
-    const t = new Date(isoWithZone).getTime()
-    if (!isNaN(t)) return t
+
+    // 2. ISO/SQL string without offset (e.g. "2026-10-12T16:17:48" or "2026-10-12 21:47:48")
+    const cleanIso = str.replace(' ', 'T').replace(/\.(\d{3})\d+/, '.$1')
+    const asIst = new Date(cleanIso + '+05:30').getTime()
+    const asUtc = new Date(cleanIso + 'Z').getTime()
+    const now = Date.now()
+    const THIRTY_MINS = 30 * 60 * 1000
+
+    // Check if either interpretation falls within the last 30 minutes
+    const elapsedIst = !isNaN(asIst) ? now - asIst : -1
+    if (elapsedIst >= 0 && elapsedIst < THIRTY_MINS) {
+      return asIst
+    }
+
+    const elapsedUtc = !isNaN(asUtc) ? now - asUtc : -1
+    if (elapsedUtc >= 0 && elapsedUtc < THIRTY_MINS) {
+      return asUtc
+    }
+
+    // Default to Asia/Kolkata (+05:30) if valid, otherwise UTC, otherwise fallback
+    if (!isNaN(asIst)) return asIst
+    if (!isNaN(asUtc)) return asUtc
     const fallback = new Date(str).getTime()
     return isNaN(fallback) ? null : fallback
   }
 
   // 30-Minute Cancellation Rule:
-  // Hide or disable the Cancel Booking button for the first 30 minutes after creation.
-  // Once 30 minutes have elapsed, show and enable for eligible bookings (BOOKED or PENDING).
-  // Never allow cancellation for already CANCELLED or other ineligible bookings.
+  // Show the Cancel Booking button only when the booking was created less than 30 minutes ago.
+  // At exactly 30 minutes or later, hide the button completely.
+  // Hide it for already-cancelled bookings.
   const isEligibleForCancellation = (booking) => {
     if (!booking) return false
     const statusUpper = (booking.status || booking.rawStatus || '').toUpperCase()
     if (statusUpper !== 'BOOKED' && statusUpper !== 'PENDING') return false
 
     const createdAt = typeof booking === 'object' && booking !== null
-      ? (booking.createdAt ?? booking.bookedAt)
+      ? (booking.createdAt || booking.created_at || booking.bookedAt)
       : booking
     const createdAtMs = parseBookingCreatedAtMs(createdAt)
     if (!createdAtMs) return false
 
     const elapsedTime = Date.now() - createdAtMs
     const THIRTY_MINUTES_MS = 30 * 60 * 1000 // 30 minutes in ms
-    return elapsedTime >= THIRTY_MINUTES_MS
+    return elapsedTime >= 0 && elapsedTime < THIRTY_MINUTES_MS
   }
 
   const isWithin30Mins = isEligibleForCancellation
@@ -1532,12 +1635,43 @@ function App() {
         }
         return data
       })
-      .then(() => {
+      .then((savedBooking) => {
         setBookingModalRoom(null)
         setBookingError('')
         setBookingSuccessMsg('Room booked successfully')
         // Optimistically record booked room for instant UI feedback
-        setUserBookedRooms((prev) => [...prev, `${activeDate}_${selectedSlotId}_${bookingModalRoom.id}`])
+        const bookingKey = `${activeDate}_${selectedSlotId}_${bookingModalRoom.id}`
+        setUserBookedRooms((prev) => (prev.includes(bookingKey) ? prev : [...prev, bookingKey]))
+        setRoomBookings((prev) => {
+          const next = { ...prev }
+          if (!next[activeDate]) next[activeDate] = {}
+          else next[activeDate] = { ...next[activeDate] }
+          if (!next[activeDate][selectedSlotId]) next[activeDate][selectedSlotId] = {}
+          else next[activeDate][selectedSlotId] = { ...next[activeDate][selectedSlotId] }
+          next[activeDate][selectedSlotId][bookingModalRoom.id] = (next[activeDate][selectedSlotId][bookingModalRoom.id] || 0) + 1
+          return next
+        })
+        const newBookingItem = {
+          id: `rb-${(savedBooking && savedBooking.id) || Date.now()}`,
+          backendId: (savedBooking && savedBooking.id) || null,
+          type: 'room',
+          typeName: 'Room Booking',
+          name: bookingModalRoom.roomName || bookingModalRoom.name || `Room ${bookingModalRoom.id}`,
+          roomName: bookingModalRoom.roomName || bookingModalRoom.name || `Room ${bookingModalRoom.id}`,
+          block: bookingModalRoom.block || '',
+          capacity: bookingModalRoom.capacity || 0,
+          date: activeDate,
+          bookingDate: activeDate,
+          time: slotObj ? slotObj.time : '',
+          timeSlot: slotObj ? slotObj.time : '',
+          slotId: selectedSlotId,
+          roomId: bookingModalRoom.id,
+          status: 'Booked',
+          rawStatus: 'BOOKED',
+          createdAt: (savedBooking && savedBooking.createdAt) || new Date().toISOString(),
+          bookedAt: (savedBooking && savedBooking.createdAt) || new Date().toISOString(),
+        }
+        setMyBookings((prev) => [newBookingItem, ...prev.filter(b => b.backendId && savedBooking && b.backendId !== savedBooking.id)])
         setAnalyticsRefreshTrigger((prev) => prev + 1)
         fetchRooms()
         if (userId) fetchMyBookings(userId)
@@ -1585,12 +1719,31 @@ function App() {
         }
         return data
       })
-      .then(() => {
+      .then((savedEquip) => {
         setEquipModalItem(null)
         setEquipBookingError('')
         setEquipSuccessMsg('Equipment booked successfully')
         // Optimistically record booked equipment for instant UI feedback
         setUserBookedEquipment((prev) => [...prev, `${activeDate}_${equipModalItem.id}`])
+        const newBookingItem = {
+          id: `eb-${(savedEquip && savedEquip.id) || Date.now()}`,
+          backendId: (savedEquip && savedEquip.id) || null,
+          type: 'equipment',
+          typeName: 'Equipment Booking',
+          name: equipModalItem.equipmentName || equipModalItem.name || `Equipment ${equipModalItem.id}`,
+          equipmentName: equipModalItem.equipmentName || equipModalItem.name || `Equipment ${equipModalItem.id}`,
+          quantity: 1,
+          date: activeDate,
+          bookingDate: activeDate,
+          time: '4:30 PM - 7:00 PM',
+          timeSlot: '4:30 PM - 7:00 PM',
+          equipmentId: equipModalItem.id,
+          status: 'Booked',
+          rawStatus: 'BOOKED',
+          createdAt: (savedEquip && (savedEquip.createdAt || savedEquip.created_at)) || new Date().toISOString(),
+          bookedAt: (savedEquip && (savedEquip.createdAt || savedEquip.created_at)) || new Date().toISOString(),
+        }
+        setMyBookings((prev) => [newBookingItem, ...prev.filter(b => b.backendId && savedEquip && b.backendId !== savedEquip.id)])
         setAnalyticsRefreshTrigger((prev) => prev + 1)
         fetchEquipment()
         if (userId) fetchMyBookings(userId)
@@ -1642,6 +1795,18 @@ function App() {
         setCancelModalBooking(null)
         setCancelSuccessMsg('Booking cancelled successfully')
         setCancelErrorMsg('')
+        // Optimistically update My Bookings status immediately
+        setMyBookings((prev) =>
+          prev.map((b) =>
+            (b.backendId === cancelModalBooking.backendId || b.id === cancelModalBooking.id)
+              ? { ...b, status: 'Cancelled', rawStatus: 'CANCELLED' }
+              : b
+          )
+        )
+        if (isRoom) {
+          const rId = cancelModalBooking.roomId || cancelModalBooking.backendId
+          setUserBookedRooms((prev) => prev.filter((key) => !key.endsWith(`_${rId}`)))
+        }
         // Refresh My Bookings and room/equipment availability
         const userId = getStoredUserId()
         if (userId) fetchMyBookings(userId)
@@ -2213,10 +2378,13 @@ function App() {
                   </div>
                 </div>
 
+                {bookingError && (
+                  <p style={{ color: '#ef4444', fontSize: '0.88rem', fontWeight: 600, marginBottom: '1rem', textAlign: 'center' }}>
+                    {bookingError}
+                  </p>
+                )}
+
                 <div className="modal-actions-row">
-                  {bookingError && (
-                    <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '0.5rem', textAlign: 'center' }}>{bookingError}</p>
-                  )}
                   <button
                     type="button"
                     className="modal-btn-confirm"
@@ -3266,15 +3434,16 @@ function App() {
                     value={selectedWeek}
                     onChange={e => setSelectedWeek(e.target.value)}
                   >
-                    <option value={getCurrentIsoWeekString()}>This Week</option>
-                    <option value={getPreviousIsoWeekString()}>Previous Week</option>
-                    <option value="this-week">This Week (Current)</option>
-                    <option value="previous-week">Previous Week (Past)</option>
-                    <option value="2026-W42">Week 42</option>
-                    <option value="2026-W41">Week 41</option>
-                    <option value="2026-W40">Week 40</option>
-                    <option value="2026-W39">Week 39</option>
-                    {![getCurrentIsoWeekString(), getPreviousIsoWeekString(), 'this-week', 'previous-week', '2026-W39', '2026-W40', '2026-W41', '2026-W42'].includes(selectedWeek) && (
+                    <option value="this-week">This Week</option>
+                    <option value="previous-week">Previous Week</option>
+                    {availableWeekOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                    {![
+                      'this-week',
+                      'previous-week',
+                      ...availableWeekOptions.map(o => o.value)
+                    ].includes(selectedWeek) && (
                       <option value={selectedWeek}>{selectedWeek}</option>
                     )}
                   </select>
@@ -3283,7 +3452,7 @@ function App() {
                     id="ana-week-native-input"
                     aria-label="Week Picker"
                     className="ana-week-hidden-input"
-                    value={selectedWeek}
+                    value={selectedWeek === 'this-week' ? getCurrentIsoWeekString() : selectedWeek === 'previous-week' ? getPreviousIsoWeekString() : selectedWeek}
                     onChange={e => setSelectedWeek(e.target.value)}
                     style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }}
                     tabIndex={-1}
@@ -3294,8 +3463,39 @@ function App() {
             </div>
           </div>
 
+          {/* Loading Indicator */}
+          {analyticsLoading && (
+            <div className="ana-loading-container" role="status" aria-live="polite">
+              <div className="ana-spinner" />
+              <p className="ana-loading-text">
+                {viewMode === 'daily'
+                  ? `Loading analytics for ${selectedDate}...`
+                  : `Loading analytics for ${selectedWeek === 'this-week' ? 'This Week' : selectedWeek === 'previous-week' ? 'Previous Week' : selectedWeek}...`}
+              </p>
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {analyticsError && !analyticsLoading && (
+            <div className="ana-error-container" role="alert">
+              <div className="ana-error-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div className="ana-error-content">
+                <p className="ana-error-text">{analyticsError}</p>
+                <button
+                  type="button"
+                  className="ana-retry-btn"
+                  onClick={() => setAnalyticsRefreshTrigger(prev => prev + 1)}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ========== DAILY MODE ========== */}
-          {viewMode === 'daily' && (
+          {!analyticsLoading && !analyticsError && viewMode === 'daily' && (
             <>
               {/* Summary Cards */}
               <section className="ana-summary-grid">
@@ -3451,7 +3651,7 @@ function App() {
           )}
 
           {/* ========== WEEKLY MODE ========== */}
-          {viewMode === 'weekly' && (
+          {!analyticsLoading && !analyticsError && viewMode === 'weekly' && (
             <>
               {/* Weekly Summary Cards */}
               <section className="ana-summary-grid">
@@ -3597,70 +3797,72 @@ function App() {
           )}
 
           {/* ========== AI RECOMMENDATIONS ========== */}
-          <section className="ana-ai-section">
-            <div className="ana-ai-header">
-              <h2 className="ana-ai-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22" /><path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93" /><path d="M8.56 13a8 8 0 0 0-2.3 3.08" /><path d="M15.44 13a8 8 0 0 1 2.3 3.08" /></svg>
-                AI RECOMMENDATIONS
-              </h2>
-              <p className="ana-ai-subtitle">Expected demand for next week based on recent booking trends.</p>
-            </div>
-            <div className="ana-ai-grid">
-              {/* Card 1: High-Demand Room */}
-              <div className="ana-ai-card">
-                <div className="ana-ai-card-top">
-                  <div className="ana-ai-card-icon ana-icon-blue">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
-                  </div>
-                  <span className="ana-ai-card-badge">HIGH-DEMAND ROOM</span>
-                </div>
-                <div className="ana-ai-card-meta">Expected High-Demand Room:</div>
-                <div className="ana-ai-card-highlight">{highDemandRoom}</div>
-                <p className="ana-ai-card-desc">{highDemandRoomDesc}</p>
+          {!analyticsLoading && !analyticsError && (
+            <section className="ana-ai-section">
+              <div className="ana-ai-header">
+                <h2 className="ana-ai-title">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22" /><path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93" /><path d="M8.56 13a8 8 0 0 0-2.3 3.08" /><path d="M15.44 13a8 8 0 0 1 2.3 3.08" /></svg>
+                  AI RECOMMENDATIONS
+                </h2>
+                <p className="ana-ai-subtitle">Expected demand for next week based on recent booking trends.</p>
               </div>
+              <div className="ana-ai-grid">
+                {/* Card 1: High-Demand Room */}
+                <div className="ana-ai-card">
+                  <div className="ana-ai-card-top">
+                    <div className="ana-ai-card-icon ana-icon-blue">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                    </div>
+                    <span className="ana-ai-card-badge">HIGH-DEMAND ROOM</span>
+                  </div>
+                  <div className="ana-ai-card-meta">Expected High-Demand Room:</div>
+                  <div className="ana-ai-card-highlight">{highDemandRoom}</div>
+                  <p className="ana-ai-card-desc">{highDemandRoomDesc}</p>
+                </div>
 
-              {/* Card 2: High-Demand Equipment */}
-              <div className="ana-ai-card">
-                <div className="ana-ai-card-top">
-                  <div className="ana-ai-card-icon ana-icon-emerald">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></svg>
+                {/* Card 2: High-Demand Equipment */}
+                <div className="ana-ai-card">
+                  <div className="ana-ai-card-top">
+                    <div className="ana-ai-card-icon ana-icon-emerald">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></svg>
+                    </div>
+                    <span className="ana-ai-card-badge">HIGH-DEMAND EQUIPMENT</span>
                   </div>
-                  <span className="ana-ai-card-badge">HIGH-DEMAND EQUIPMENT</span>
+                  <div className="ana-ai-card-meta">Expected High-Demand Equipment:</div>
+                  <div className="ana-ai-card-highlight">{highDemandEquip}</div>
+                  <p className="ana-ai-card-desc">{highDemandEquipDesc}</p>
                 </div>
-                <div className="ana-ai-card-meta">Expected High-Demand Equipment:</div>
-                <div className="ana-ai-card-highlight">{highDemandEquip}</div>
-                <p className="ana-ai-card-desc">{highDemandEquipDesc}</p>
-              </div>
 
-              {/* Card 3: Expected Peak Day */}
-              <div className="ana-ai-card">
-                <div className="ana-ai-card-top">
-                  <div className="ana-ai-card-icon ana-icon-amber">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                {/* Card 3: Expected Peak Day */}
+                <div className="ana-ai-card">
+                  <div className="ana-ai-card-top">
+                    <div className="ana-ai-card-icon ana-icon-amber">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                    </div>
+                    <span className="ana-ai-card-badge">EXPECTED PEAK DAY</span>
                   </div>
-                  <span className="ana-ai-card-badge">EXPECTED PEAK DAY</span>
+                  <div className="ana-ai-card-meta">Highest Activity Day:</div>
+                  <div className="ana-ai-card-highlight">{expectedPeakDay}</div>
+                  <p className="ana-ai-card-desc">{expectedPeakDayDesc}</p>
                 </div>
-                <div className="ana-ai-card-meta">Highest Activity Day:</div>
-                <div className="ana-ai-card-highlight">{expectedPeakDay}</div>
-                <p className="ana-ai-card-desc">{expectedPeakDayDesc}</p>
-              </div>
 
-              {/* Card 4: Recommended Action */}
-              <div className="ana-ai-card">
-                <div className="ana-ai-card-top">
-                  <div className="ana-ai-card-icon ana-icon-indigo">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+                {/* Card 4: Recommended Action */}
+                <div className="ana-ai-card">
+                  <div className="ana-ai-card-top">
+                    <div className="ana-ai-card-icon ana-icon-indigo">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+                    </div>
+                    <span className="ana-ai-card-badge">RECOMMENDED ACTION</span>
                   </div>
-                  <span className="ana-ai-card-badge">RECOMMENDED ACTION</span>
-                </div>
-                <div className="ana-ai-card-meta">Action Items:</div>
-                <div className="ana-ai-card-highlight">{recommendedAction}</div>
-                <div className="ana-ai-action-list">
-                  <p className="ana-ai-card-desc">{recommendedAction}</p>
+                  <div className="ana-ai-card-meta">Action Items:</div>
+                  <div className="ana-ai-card-highlight">{recommendedAction}</div>
+                  <div className="ana-ai-action-list">
+                    <p className="ana-ai-card-desc">{recommendedAction}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </main>
       </div>
     )
@@ -4102,7 +4304,7 @@ function App() {
                           )}
                         </div>
 
-                        {/* Cancel Button appears after 30 minutes from booking creation for eligible bookings */}
+                        {/* Cancel Button appears only within 30 minutes from booking creation for eligible bookings */}
                         {cancellable && (
                           <div className="my-booking-card-footer">
                             <button

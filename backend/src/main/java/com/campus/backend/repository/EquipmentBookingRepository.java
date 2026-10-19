@@ -39,8 +39,18 @@ public interface EquipmentBookingRepository extends JpaRepository<EquipmentBooki
     // My bookings
     List<EquipmentBooking> findByUserId(Long userId);
 
+    // Analytics: all bookings for a specific date (any status)
+    List<EquipmentBooking> findByBookingDate(String bookingDate);
+
     // Analytics: all bookings for a specific date
     List<EquipmentBooking> findByBookingDateAndStatusIn(String bookingDate, List<String> statuses);
+
+    // Analytics: all bookings for a date range (any status)
+    @Query("SELECT eb FROM EquipmentBooking eb WHERE eb.bookingDate >= :fromDate " +
+           "AND eb.bookingDate <= :toDate")
+    List<EquipmentBooking> findByBookingDateBetween(
+            @Param("fromDate") String fromDate,
+            @Param("toDate") String toDate);
 
     // Analytics: all bookings for a date range
     @Query("SELECT eb FROM EquipmentBooking eb WHERE eb.bookingDate >= :fromDate " +
@@ -49,4 +59,8 @@ public interface EquipmentBookingRepository extends JpaRepository<EquipmentBooki
             @Param("fromDate") String fromDate,
             @Param("toDate") String toDate,
             @Param("statuses") List<String> statuses);
+
+    // Analytics: distinct booking dates from all booking history
+    @Query("SELECT DISTINCT eb.bookingDate FROM EquipmentBooking eb WHERE eb.bookingDate IS NOT NULL")
+    List<String> findDistinctBookingDates();
 }

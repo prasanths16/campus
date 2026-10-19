@@ -745,3 +745,101 @@
   border: 1px solid #fde68a;
 }
 
+/* ====================================================
+   ANALYTICS LOADING & ERROR STATES
+   ==================================================== */
+.ana-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  gap: 1rem;
+}
+
+.ana-spinner {
+  width: 42px;
+  height: 42px;
+  border: 3.5px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: anaSpin 0.8s linear infinite;
+}
+
+@keyframes anaSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ana-loading-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
+.ana-error-container {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.75rem;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.08);
+}
+
+.ana-error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.ana-error-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ana-error-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #b91c1c;
+  line-height: 1.4;
+}
+
+.ana-retry-btn {
+  padding: 0.55rem 1.25rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #dc2626;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+  flex-shrink: 0;
+}
+
+.ana-retry-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+}
+

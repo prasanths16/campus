@@ -180,11 +180,11 @@ public class BookingService {
             throw new IllegalStateException("Booking is not eligible for cancellation.");
         }
 
-        // Enforce 30-minute rule: cancellation is only allowed once 30 minutes have elapsed
+        // Enforce 30-minute rule: cancellation is only allowed within 30 minutes of creation
         LocalDateTime now = LocalDateTime.now(CAMPUS_ZONE);
         LocalDateTime createdAt = booking.getCreatedAt();
-        if (createdAt != null && now.isBefore(createdAt.plusMinutes(30))) {
-            throw new IllegalStateException("Bookings cannot be cancelled within the first 30 minutes of creation.");
+        if (createdAt != null && !now.isBefore(createdAt.plusMinutes(30))) {
+            throw new IllegalStateException("Bookings can only be cancelled within 30 minutes of creation.");
         }
 
         booking.setStatus("CANCELLED");
@@ -203,11 +203,11 @@ public class BookingService {
             throw new IllegalStateException("Booking is not eligible for cancellation.");
         }
 
-        // Enforce 30-minute rule: cancellation is only allowed once 30 minutes have elapsed
+        // Enforce 30-minute rule: cancellation is only allowed within 30 minutes of creation
         LocalDateTime now = LocalDateTime.now(CAMPUS_ZONE);
         LocalDateTime createdAt = booking.getCreatedAt();
-        if (createdAt != null && now.isBefore(createdAt.plusMinutes(30))) {
-            throw new IllegalStateException("Bookings cannot be cancelled within the first 30 minutes of creation.");
+        if (createdAt != null && !now.isBefore(createdAt.plusMinutes(30))) {
+            throw new IllegalStateException("Bookings can only be cancelled within 30 minutes of creation.");
         }
 
         booking.setStatus("CANCELLED");

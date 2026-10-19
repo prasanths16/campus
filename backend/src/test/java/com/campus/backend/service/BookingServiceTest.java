@@ -57,27 +57,12 @@ class BookingServiceTest {
     }
 
     @Test
-    void cancelRoomBooking_within30Minutes_throwsException() {
-        RoomBooking booking = new RoomBooking();
-        booking.setId(1L);
-        booking.setStatus("BOOKED");
-        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(10));
-
-        when(roomBookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                bookingService.cancelRoomBooking(1L)
-        );
-        assertEquals("Bookings cannot be cancelled within the first 30 minutes of creation.", ex.getMessage());
-    }
-
-    @Test
-    void cancelRoomBooking_after30Minutes_succeeds() {
+    void cancelRoomBooking_within30Minutes_succeeds() {
         RoomBooking booking = new RoomBooking();
         booking.setId(1L);
         booking.setRoomId(10L);
         booking.setStatus("BOOKED");
-        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(35));
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(10));
 
         when(roomBookingRepository.findById(1L)).thenReturn(Optional.of(booking));
         when(roomBookingRepository.save(any(RoomBooking.class))).thenAnswer(i -> i.getArgument(0));
@@ -89,11 +74,41 @@ class BookingServiceTest {
     }
 
     @Test
+    void cancelRoomBooking_atExactly30Minutes_throwsException() {
+        RoomBooking booking = new RoomBooking();
+        booking.setId(1L);
+        booking.setStatus("BOOKED");
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(30));
+
+        when(roomBookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                bookingService.cancelRoomBooking(1L)
+        );
+        assertEquals("Bookings can only be cancelled within 30 minutes of creation.", ex.getMessage());
+    }
+
+    @Test
+    void cancelRoomBooking_after30Minutes_throwsException() {
+        RoomBooking booking = new RoomBooking();
+        booking.setId(1L);
+        booking.setStatus("BOOKED");
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(35));
+
+        when(roomBookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                bookingService.cancelRoomBooking(1L)
+        );
+        assertEquals("Bookings can only be cancelled within 30 minutes of creation.", ex.getMessage());
+    }
+
+    @Test
     void cancelRoomBooking_alreadyCancelled_throwsException() {
         RoomBooking booking = new RoomBooking();
         booking.setId(1L);
         booking.setStatus("CANCELLED");
-        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(40));
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(10));
 
         when(roomBookingRepository.findById(1L)).thenReturn(Optional.of(booking));
 
@@ -104,27 +119,12 @@ class BookingServiceTest {
     }
 
     @Test
-    void cancelEquipmentBooking_within30Minutes_throwsException() {
-        EquipmentBooking booking = new EquipmentBooking();
-        booking.setId(2L);
-        booking.setStatus("PENDING");
-        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(5));
-
-        when(equipmentBookingRepository.findById(2L)).thenReturn(Optional.of(booking));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                bookingService.cancelEquipmentBooking(2L)
-        );
-        assertEquals("Bookings cannot be cancelled within the first 30 minutes of creation.", ex.getMessage());
-    }
-
-    @Test
-    void cancelEquipmentBooking_after30Minutes_succeeds() {
+    void cancelEquipmentBooking_within30Minutes_succeeds() {
         EquipmentBooking booking = new EquipmentBooking();
         booking.setId(2L);
         booking.setEquipmentId(20L);
-        booking.setStatus("BOOKED");
-        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(31));
+        booking.setStatus("PENDING");
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(5));
 
         when(equipmentBookingRepository.findById(2L)).thenReturn(Optional.of(booking));
         when(equipmentBookingRepository.save(any(EquipmentBooking.class))).thenAnswer(i -> i.getArgument(0));
@@ -133,5 +133,133 @@ class BookingServiceTest {
 
         assertEquals("CANCELLED", result.getStatus());
         verify(equipmentBookingRepository).save(booking);
+    }
+
+    @Test
+    void cancelEquipmentBooking_atExactly30Minutes_throwsException() {
+        EquipmentBooking booking = new EquipmentBooking();
+        booking.setId(2L);
+        booking.setStatus("BOOKED");
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(30));
+
+        when(equipmentBookingRepository.findById(2L)).thenReturn(Optional.of(booking));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                bookingService.cancelEquipmentBooking(2L)
+        );
+        assertEquals("Bookings can only be cancelled within 30 minutes of creation.", ex.getMessage());
+    }
+
+    @Test
+    void cancelEquipmentBooking_after30Minutes_throwsException() {
+        EquipmentBooking booking = new EquipmentBooking();
+        booking.setId(2L);
+        booking.setStatus("BOOKED");
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(31));
+
+        when(equipmentBookingRepository.findById(2L)).thenReturn(Optional.of(booking));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                bookingService.cancelEquipmentBooking(2L)
+        );
+        assertEquals("Bookings can only be cancelled within 30 minutes of creation.", ex.getMessage());
+    }
+
+    @Test
+    void cancelEquipmentBooking_alreadyCancelled_throwsException() {
+        EquipmentBooking booking = new EquipmentBooking();
+        booking.setId(2L);
+        booking.setStatus("CANCELLED");
+        booking.setCreatedAt(LocalDateTime.now(campusZone).minusMinutes(5));
+
+        when(equipmentBookingRepository.findById(2L)).thenReturn(Optional.of(booking));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                bookingService.cancelEquipmentBooking(2L)
+        );
+        assertEquals("Booking is already cancelled.", ex.getMessage());
+    }
+
+    @Test
+    void bookRoom_validRequest_savesAndReturnsBooking() {
+        com.campus.backend.dto.RoomBookingRequest req = new com.campus.backend.dto.RoomBookingRequest();
+        req.setUserId(1L);
+        req.setRoomId(10L);
+        req.setBookingDate("2026-10-12");
+        req.setTimeSlot("8:45 AM – 10:30 AM");
+
+        com.campus.backend.entity.Room room = new com.campus.backend.entity.Room();
+        room.setId(10L);
+        room.setRoomName("Room 201");
+        room.setStatus("AVAILABLE");
+        room.setCapacity(40);
+
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomBookingRepository.countByRoomIdAndBookingDateAndTimeSlotAndStatusIn(any(), any(), any(), any())).thenReturn(0);
+        when(roomBookingRepository.existsByUserIdAndRoomIdAndBookingDateAndTimeSlotAndStatusIn(any(), any(), any(), any(), any())).thenReturn(false);
+        when(roomBookingRepository.save(any(RoomBooking.class))).thenAnswer(i -> {
+            RoomBooking b = i.getArgument(0);
+            b.setId(101L);
+            return b;
+        });
+
+        RoomBooking result = bookingService.bookRoom(req);
+
+        assertEquals(101L, result.getId());
+        assertEquals("BOOKED", result.getStatus());
+        assertEquals(1L, result.getUserId());
+        assertEquals(10L, result.getRoomId());
+        assertEquals("2026-10-12", result.getBookingDate());
+        verify(roomBookingRepository).save(any(RoomBooking.class));
+    }
+
+    @Test
+    void bookRoom_roomFull_throwsIllegalStateException() {
+        com.campus.backend.dto.RoomBookingRequest req = new com.campus.backend.dto.RoomBookingRequest();
+        req.setUserId(1L);
+        req.setRoomId(10L);
+        req.setBookingDate("2026-10-12");
+        req.setTimeSlot("8:45 AM – 10:30 AM");
+
+        com.campus.backend.entity.Room room = new com.campus.backend.entity.Room();
+        room.setId(10L);
+        room.setRoomName("Room 201");
+        room.setStatus("AVAILABLE");
+        room.setCapacity(2);
+
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomBookingRepository.countByRoomIdAndBookingDateAndTimeSlotAndStatusIn(any(), any(), any(), any())).thenReturn(2);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                bookingService.bookRoom(req)
+        );
+        assertEquals("Room is full.", ex.getMessage());
+    }
+
+    @Test
+    void bookRoom_alreadyBooked_throwsIllegalStateException() {
+        com.campus.backend.dto.RoomBookingRequest req = new com.campus.backend.dto.RoomBookingRequest();
+        req.setUserId(1L);
+        req.setRoomId(10L);
+        req.setBookingDate("2026-10-12");
+        req.setTimeSlot("8:45 AM – 10:30 AM");
+
+        com.campus.backend.entity.Room room = new com.campus.backend.entity.Room();
+        room.setId(10L);
+        room.setRoomName("Room 201");
+        room.setStatus("AVAILABLE");
+        room.setCapacity(40);
+
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomBookingRepository.countByRoomIdAndBookingDateAndTimeSlotAndStatusIn(any(), any(), any(), any())).thenReturn(5);
+        when(roomBookingRepository.existsByUserIdAndRoomIdAndBookingDateAndTimeSlotAndStatusIn(any(), any(), any(), any(), any())).thenReturn(true);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                bookingService.bookRoom(req)
+        );
+        assertEquals("You have already booked this room for the selected date and time slot", ex.getMessage());
     }
 }

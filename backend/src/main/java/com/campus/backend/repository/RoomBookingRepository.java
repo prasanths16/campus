@@ -32,8 +32,18 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, Long> 
     // My bookings
     List<RoomBooking> findByUserId(Long userId);
 
+    // Analytics: all bookings for a specific date (any status)
+    List<RoomBooking> findByBookingDate(String bookingDate);
+
     // Analytics: all bookings for a specific date with given statuses
     List<RoomBooking> findByBookingDateAndStatusIn(String bookingDate, List<String> statuses);
+
+    // Analytics: all bookings for a date range (any status)
+    @Query("SELECT rb FROM RoomBooking rb WHERE rb.bookingDate >= :fromDate " +
+           "AND rb.bookingDate <= :toDate")
+    List<RoomBooking> findByBookingDateBetween(
+            @Param("fromDate") String fromDate,
+            @Param("toDate") String toDate);
 
     // Analytics: all bookings for a date range
     @Query("SELECT rb FROM RoomBooking rb WHERE rb.bookingDate >= :fromDate " +
@@ -42,4 +52,8 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, Long> 
             @Param("fromDate") String fromDate,
             @Param("toDate") String toDate,
             @Param("statuses") List<String> statuses);
+
+    // Analytics: distinct booking dates from all booking history
+    @Query("SELECT DISTINCT rb.bookingDate FROM RoomBooking rb WHERE rb.bookingDate IS NOT NULL")
+    List<String> findDistinctBookingDates();
 }

@@ -6,18 +6,24 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.campus.backend.entity.Equipment;
 import com.campus.backend.entity.EquipmentBooking;
+import com.campus.backend.entity.Room;
 import com.campus.backend.entity.RoomBooking;
 import com.campus.backend.repository.EquipmentBookingRepository;
 import com.campus.backend.repository.EquipmentRepository;
@@ -47,6 +53,18 @@ public class AnalyticsService {
         this.equipmentRepository = equipmentRepository;
     }
 
+    // ── Pre-fetching helpers to prevent N+1 queries ─────────────────────────
+
+    private Map<Long, String> getRoomNameMap() {
+        return roomRepository.findAll().stream()
+                .collect(Collectors.toMap(Room::getId, Room::getRoomName, (a, b) -> a));
+    }
+
+    private Map<Long, String> getEquipmentNameMap() {
+        return equipmentRepository.findAll().stream()
+                .collect(Collectors.toMap(Equipment::getId, Equipment::getEquipmentName, (a, b) -> a));
+    }
+
     // ── Daily Analytics ───────────────────────────────────────────────────────
 
     public Map<String, Object> getDailyAnalytics(String date) {
@@ -65,20 +83,36 @@ public class AnalyticsService {
         }
         String cleanDate = targetDate.format(DATE_FMT);
 
-        List<RoomBooking> rbs = roomBookingRepository.findByBookingDateAndStatusIn(cleanDate, ACTIVE_STATUSES);
-        List<EquipmentBooking> ebs = equipmentBookingRepository.findByBookingDateAndStatusIn(cleanDate, ACTIVE_STATUSES);
+        Map<Long, String> roomNames = getRoomNameMap();
+        Map<Long, String> equipNames = getEquipmentNameMap();
 
-        // AI Recommendations use all available booking data from the start of the week (Monday)
-        // up to the target date (Monday -> Monday; Tuesday -> Monday+Tuesday; Wednesday -> Monday+Tuesday+Wednesday, etc.)
+        List<RoomBooking> allRbs = roomBookingRepository.findByBookingDate(cleanDate);
+        List<EquipmentBooking> allEbs = equipmentBookingRepository.findByBookingDate(cleanDate);
+
+        List<RoomBooking> activeRbs = allRbs.stream()
+                .filter(rb -> ACTIVE_STATUSES.contains(rb.getStatus().toUpperCase()))
+                .collect(Collectors.toList());
+        List<EquipmentBooking> activeEbs = allEbs.stream()
+                .filter(eb -> ACTIVE_STATUSES.contains(eb.getStatus().toUpperCase()))
+                .collect(Collectors.toList());
+
+        long pendingRooms = allRbs.stream().filter(rb -> "PENDING".equalsIgnoreCase(rb.getStatus())).count();
+        long pendingEquips = allEbs.stream().filter(eb -> "PENDING".equalsIgnoreCase(eb.getStatus())).count();
+        long cancelledRooms = allRbs.stream().filter(rb -> "CANCELLED".equalsIgnoreCase(rb.getStatus())).count();
+        long cancelledEquips = allEbs.stream().filter(eb -> "CANCELLED".equalsIgnoreCase(eb.getStatus())).count();
+
+        // AI Recommendations use active booking data from the start of the week (Monday)
+        // up to the target date (inclusive)
         LocalDate monday = targetDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-
         String fromDate = monday.format(DATE_FMT);
         String toDate = targetDate.format(DATE_FMT);
 
-        List<RoomBooking> recRbs = roomBookingRepository.findByBookingDateBetweenAndStatusIn(
-                fromDate, toDate, ACTIVE_STATUSES);
-        List<EquipmentBooking> recEbs = equipmentBookingRepository.findByBookingDateBetweenAndStatusIn(
-                fromDate, toDate, ACTIVE_STATUSES);
+        List<RoomBooking> recRbs = roomBookingRepository.findByBookingDateBetween(fromDate, toDate).stream()
+                .filter(rb -> ACTIVE_STATUSES.contains(rb.getStatus().toUpperCase()))
+                .collect(Collectors.toList());
+        List<EquipmentBooking> recEbs = equipmentBookingRepository.findByBookingDateBetween(fromDate, toDate).stream()
+                .filter(eb -> ACTIVE_STATUSES.contains(eb.getStatus().toUpperCase()))
+                .collect(Collectors.toList());
 
         List<Map<String, Object>> recDailyTrend = new ArrayList<>();
         LocalDate cur = monday;
@@ -96,19 +130,17 @@ public class AnalyticsService {
             cur = cur.plusDays(1);
         }
 
-        long pendingRooms = rbs.stream().filter(rb -> "PENDING".equalsIgnoreCase(rb.getStatus())).count();
-        long pendingEquips = ebs.stream().filter(eb -> "PENDING".equalsIgnoreCase(eb.getStatus())).count();
-
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("date", cleanDate);
-        result.put("totalBookings", rbs.size() + ebs.size());
-        result.put("roomBookings", rbs.size());
-        result.put("equipmentBookings", ebs.size());
+        result.put("totalBookings", activeRbs.size() + activeEbs.size());
+        result.put("roomBookings", activeRbs.size());
+        result.put("equipmentBookings", activeEbs.size());
         result.put("pendingBookings", pendingRooms + pendingEquips);
-        result.put("roomUsage", buildRoomUsage(rbs));
-        result.put("equipmentUsage", buildEquipmentUsage(ebs));
-        result.put("bookingTrend", buildHourlyTrend(rbs, ebs));
-        result.put("recommendations", buildRecommendations(recRbs, recEbs, recDailyTrend));
+        result.put("cancelledBookings", cancelledRooms + cancelledEquips);
+        result.put("roomUsage", buildRoomUsage(activeRbs, roomNames));
+        result.put("equipmentUsage", buildEquipmentUsage(activeEbs, equipNames));
+        result.put("bookingTrend", buildHourlyTrend(activeRbs, activeEbs));
+        result.put("recommendations", buildRecommendations(recRbs, recEbs, recDailyTrend, roomNames, equipNames));
         return result;
     }
 
@@ -148,7 +180,7 @@ public class AnalyticsService {
             resolvedIsoWeek = String.format("%04d-W%02d", yNum, wNum);
         } else {
             // Parse year and week number e.g. "2026-W41"
-            String[] parts = week.split("-W");
+            String[] parts = week.toUpperCase().split("-W");
             if (parts.length != 2) {
                 throw new IllegalArgumentException("Invalid week format. Expected: YYYY-WWW, 'this-week', or 'previous-week'. Received: " + week);
             }
@@ -156,7 +188,8 @@ public class AnalyticsService {
             int weekNum = Integer.parseInt(parts[1]);
 
             // Determine Monday and Sunday of that ISO week
-            monday = LocalDate.of(year, 1, 4) // Jan 4 is always in week 1
+            monday = LocalDate.of(year, 1, 4)
+                    .with(IsoFields.WEEK_BASED_YEAR, year)
                     .with(IsoFields.WEEK_OF_WEEK_BASED_YEAR, weekNum)
                     .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             sunday = monday.plusDays(6);
@@ -166,23 +199,43 @@ public class AnalyticsService {
         String fromDate = monday.format(DATE_FMT);
         String toDate = sunday.format(DATE_FMT);
 
-        List<RoomBooking> rbs = roomBookingRepository.findByBookingDateBetweenAndStatusIn(
-                fromDate, toDate, ACTIVE_STATUSES);
-        List<EquipmentBooking> ebs = equipmentBookingRepository.findByBookingDateBetweenAndStatusIn(
-                fromDate, toDate, ACTIVE_STATUSES);
+        Map<Long, String> roomNames = getRoomNameMap();
+        Map<Long, String> equipNames = getEquipmentNameMap();
+
+        List<RoomBooking> allRbs = roomBookingRepository.findByBookingDateBetween(fromDate, toDate);
+        List<EquipmentBooking> allEbs = equipmentBookingRepository.findByBookingDateBetween(fromDate, toDate);
+
+        List<RoomBooking> activeRbs = allRbs.stream()
+                .filter(rb -> ACTIVE_STATUSES.contains(rb.getStatus().toUpperCase()))
+                .collect(Collectors.toList());
+        List<EquipmentBooking> activeEbs = allEbs.stream()
+                .filter(eb -> ACTIVE_STATUSES.contains(eb.getStatus().toUpperCase()))
+                .collect(Collectors.toList());
+
+        long pendingRooms = allRbs.stream().filter(rb -> "PENDING".equalsIgnoreCase(rb.getStatus())).count();
+        long pendingEquips = allEbs.stream().filter(eb -> "PENDING".equalsIgnoreCase(eb.getStatus())).count();
+        long cancelledRooms = allRbs.stream().filter(rb -> "CANCELLED".equalsIgnoreCase(rb.getStatus())).count();
+        long cancelledEquips = allEbs.stream().filter(eb -> "CANCELLED".equalsIgnoreCase(eb.getStatus())).count();
 
         // Build daily trend (Mon→Sun)
         List<Map<String, Object>> dailyTrend = new ArrayList<>();
         LocalDate cur = monday;
         while (!cur.isAfter(sunday)) {
             String d = cur.format(DATE_FMT);
-            long roomCount = rbs.stream().filter(rb -> rb.getBookingDate().equals(d)).count();
-            long eqCount = ebs.stream().filter(eb -> eb.getBookingDate().equals(d)).count();
+            long roomCount = activeRbs.stream().filter(rb -> rb.getBookingDate().equals(d)).count();
+            long eqCount = activeEbs.stream().filter(eb -> eb.getBookingDate().equals(d)).count();
+            long dayPending = allRbs.stream().filter(rb -> rb.getBookingDate().equals(d) && "PENDING".equalsIgnoreCase(rb.getStatus())).count()
+                    + allEbs.stream().filter(eb -> eb.getBookingDate().equals(d) && "PENDING".equalsIgnoreCase(eb.getStatus())).count();
+            long dayCancelled = allRbs.stream().filter(rb -> rb.getBookingDate().equals(d) && "CANCELLED".equalsIgnoreCase(rb.getStatus())).count()
+                    + allEbs.stream().filter(eb -> eb.getBookingDate().equals(d) && "CANCELLED".equalsIgnoreCase(eb.getStatus())).count();
+
             Map<String, Object> day = new LinkedHashMap<>();
             day.put("date", d);
             day.put("dayOfWeek", cur.getDayOfWeek().name());
             day.put("roomBookings", roomCount);
             day.put("equipmentBookings", eqCount);
+            day.put("pendingBookings", dayPending);
+            day.put("cancelledBookings", dayCancelled);
             day.put("total", roomCount + eqCount);
             dailyTrend.add(day);
             cur = cur.plusDays(1);
@@ -193,19 +246,92 @@ public class AnalyticsService {
         result.put("requestedWeek", week);
         result.put("from", fromDate);
         result.put("to", toDate);
-        result.put("totalBookings", rbs.size() + ebs.size());
-        result.put("roomBookings", rbs.size());
-        result.put("equipmentBookings", ebs.size());
-        result.put("roomUsage", buildRoomUsage(rbs));
-        result.put("equipmentUsage", buildEquipmentUsage(ebs));
+        result.put("totalBookings", activeRbs.size() + activeEbs.size());
+        result.put("roomBookings", activeRbs.size());
+        result.put("equipmentBookings", activeEbs.size());
+        result.put("pendingBookings", pendingRooms + pendingEquips);
+        result.put("cancelledBookings", cancelledRooms + cancelledEquips);
+        result.put("roomUsage", buildRoomUsage(activeRbs, roomNames));
+        result.put("equipmentUsage", buildEquipmentUsage(activeEbs, equipNames));
         result.put("dailyTrend", dailyTrend);
-        result.put("recommendations", buildRecommendations(rbs, ebs, dailyTrend));
+        result.put("recommendations", buildRecommendations(activeRbs, activeEbs, dailyTrend, roomNames, equipNames));
+        return result;
+    }
+
+    /**
+     * Automatically generate week options based on the booking history available in the database.
+     * Uses each booking's actual date to calculate its week and handles year boundaries.
+     * Generates Week 1, Week 2, Week 3, Week 4, and so on.
+     */
+    public List<Map<String, Object>> getAvailableWeeks() {
+        List<String> roomDates = roomBookingRepository.findDistinctBookingDates();
+        List<String> equipDates = equipmentBookingRepository.findDistinctBookingDates();
+
+        Set<String> allDates = new LinkedHashSet<>();
+        if (roomDates != null) {
+            for (String d : roomDates) {
+                if (d != null && !d.trim().isEmpty()) {
+                    allDates.add(d.trim());
+                }
+            }
+        }
+        if (equipDates != null) {
+            for (String d : equipDates) {
+                if (d != null && !d.trim().isEmpty()) {
+                    allDates.add(d.trim());
+                }
+            }
+        }
+
+        LocalDate today = LocalDate.now(CAMPUS_ZONE);
+        int currentYear = today.get(IsoFields.WEEK_BASED_YEAR);
+        int currentWeek = today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+
+        Map<Integer, Integer> maxWeekByYear = new LinkedHashMap<>();
+        Set<String> weeksWithBookings = new LinkedHashSet<>();
+
+        for (String dateStr : allDates) {
+            try {
+                LocalDate d = LocalDate.parse(dateStr, DATE_FMT);
+                int y = d.get(IsoFields.WEEK_BASED_YEAR);
+                int w = d.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+                String isoWeek = String.format("%04d-W%02d", y, w);
+                weeksWithBookings.add(isoWeek);
+                maxWeekByYear.put(y, Math.max(maxWeekByYear.getOrDefault(y, 0), w));
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Always include current year up to current week
+        maxWeekByYear.put(currentYear, Math.max(maxWeekByYear.getOrDefault(currentYear, 0), currentWeek));
+
+        List<Integer> sortedYears = new ArrayList<>(maxWeekByYear.keySet());
+        Collections.sort(sortedYears);
+        boolean hasMultipleYears = sortedYears.size() > 1;
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (int y : sortedYears) {
+            int maxW = maxWeekByYear.get(y);
+            for (int w = 1; w <= maxW; w++) {
+                String isoWeek = String.format("%04d-W%02d", y, w);
+                String label = hasMultipleYears ? String.format("Week %d (%d)", w, y) : String.format("Week %d", w);
+
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("value", isoWeek);
+                item.put("label", label);
+                item.put("weekNumber", w);
+                item.put("year", y);
+                item.put("hasBookings", weeksWithBookings.contains(isoWeek));
+                result.add(item);
+            }
+        }
+
         return result;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private List<Map<String, Object>> buildRoomUsage(List<RoomBooking> rbs) {
+    private List<Map<String, Object>> buildRoomUsage(List<RoomBooking> rbs, Map<Long, String> roomNames) {
         // Group by roomId, count bookings
         Map<Long, Long> countByRoom = rbs.stream()
                 .collect(Collectors.groupingBy(RoomBooking::getRoomId, Collectors.counting()));
@@ -214,7 +340,7 @@ public class AnalyticsService {
         countByRoom.forEach((roomId, count) -> {
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("roomId", roomId);
-            roomRepository.findById(roomId).ifPresent(r -> entry.put("roomName", r.getRoomName()));
+            entry.put("roomName", roomNames.getOrDefault(roomId, "Room #" + roomId));
             entry.put("bookingCount", count);
             list.add(entry);
         });
@@ -222,7 +348,7 @@ public class AnalyticsService {
         return list;
     }
 
-    private List<Map<String, Object>> buildEquipmentUsage(List<EquipmentBooking> ebs) {
+    private List<Map<String, Object>> buildEquipmentUsage(List<EquipmentBooking> ebs, Map<Long, String> equipNames) {
         // Group by equipmentId: count bookings and sum quantity
         Map<Long, List<EquipmentBooking>> grouped = ebs.stream()
                 .collect(Collectors.groupingBy(EquipmentBooking::getEquipmentId));
@@ -231,7 +357,7 @@ public class AnalyticsService {
         grouped.forEach((eqId, bookings) -> {
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("equipmentId", eqId);
-            equipmentRepository.findById(eqId).ifPresent(e -> entry.put("equipmentName", e.getEquipmentName()));
+            entry.put("equipmentName", equipNames.getOrDefault(eqId, "Equipment #" + eqId));
             entry.put("bookingCount", bookings.size());
             int totalQty = bookings.stream().mapToInt(EquipmentBooking::getQuantity).sum();
             entry.put("quantityUsed", totalQty);
@@ -266,10 +392,11 @@ public class AnalyticsService {
         return trend;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> buildRecommendations(List<RoomBooking> rbs,
                                                       List<EquipmentBooking> ebs,
-                                                      List<Map<String, Object>> dailyTrend) {
+                                                      List<Map<String, Object>> dailyTrend,
+                                                      Map<Long, String> roomNames,
+                                                      Map<Long, String> equipNames) {
         Map<String, Object> rec = new LinkedHashMap<>();
 
         // High demand room
@@ -281,7 +408,7 @@ public class AnalyticsService {
                     .map(Map.Entry::getKey)
                     .orElse(null);
             String roomName = topRoomId == null ? "N/A" :
-                    roomRepository.findById(topRoomId).map(r -> r.getRoomName()).orElse("Room #" + topRoomId);
+                    roomNames.getOrDefault(topRoomId, "Room #" + topRoomId);
             rec.put("highDemandRoom", roomName);
             rec.put("highDemandRoomMessage", "High demand for " + roomName + ".");
         } else {
@@ -298,7 +425,7 @@ public class AnalyticsService {
                     .map(Map.Entry::getKey)
                     .orElse(null);
             String eqName = topEqId == null ? "N/A" :
-                    equipmentRepository.findById(topEqId).map(e -> e.getEquipmentName()).orElse("Equipment #" + topEqId);
+                    equipNames.getOrDefault(topEqId, "Equipment #" + topEqId);
             rec.put("highDemandEquipment", eqName);
             rec.put("highDemandEquipmentMessage", "High demand for " + eqName + ".");
         } else {
@@ -354,17 +481,19 @@ public class AnalyticsService {
 
     /**
      * Returns the most recent 10 booking/cancellation events (room + equipment),
-     * sorted newest-first, with names resolved.
+     * sorted newest-first, with names resolved via batch maps without N+1 queries.
      */
     public List<Map<String, Object>> getRecentActivity() {
+        Map<Long, String> roomNames = getRoomNameMap();
+        Map<Long, String> equipNames = getEquipmentNameMap();
+
         List<Map<String, Object>> activities = new ArrayList<>();
 
         // All room bookings
         List<RoomBooking> allRoom = roomBookingRepository.findAll();
         for (RoomBooking rb : allRoom) {
             Map<String, Object> entry = new LinkedHashMap<>();
-            String roomName = roomRepository.findById(rb.getRoomId())
-                    .map(r -> r.getRoomName()).orElse("Room #" + rb.getRoomId());
+            String roomName = roomNames.getOrDefault(rb.getRoomId(), "Room #" + rb.getRoomId());
             String action = "CANCELLED".equalsIgnoreCase(rb.getStatus()) ? "cancelled" : "booked";
             entry.put("type", "room");
             entry.put("action", action);
@@ -378,8 +507,7 @@ public class AnalyticsService {
         List<EquipmentBooking> allEquip = equipmentBookingRepository.findAll();
         for (EquipmentBooking eb : allEquip) {
             Map<String, Object> entry = new LinkedHashMap<>();
-            String equipName = equipmentRepository.findById(eb.getEquipmentId())
-                    .map(e -> e.getEquipmentName()).orElse("Equipment #" + eb.getEquipmentId());
+            String equipName = equipNames.getOrDefault(eb.getEquipmentId(), "Equipment #" + eb.getEquipmentId());
             String action = "CANCELLED".equalsIgnoreCase(eb.getStatus()) ? "cancelled" : "booked";
             entry.put("type", "equipment");
             entry.put("action", action);
