@@ -3802,7 +3802,7 @@ function App() {
               <div className="ana-ai-header">
                 <h2 className="ana-ai-title">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22" /><path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93" /><path d="M8.56 13a8 8 0 0 0-2.3 3.08" /><path d="M15.44 13a8 8 0 0 1 2.3 3.08" /></svg>
-                  AI RECOMMENDATIONS
+                  RECOMMENDATIONS
                 </h2>
                 <p className="ana-ai-subtitle">Expected demand for next week based on recent booking trends.</p>
               </div>
